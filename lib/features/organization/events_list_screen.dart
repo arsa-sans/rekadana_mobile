@@ -346,11 +346,15 @@ class _EventsListScreenState extends State<EventsListScreen> {
         children: [
           Text(
             label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
             style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
           ),
           const SizedBox(height: 2),
           Text(
             value,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
             style: AppTheme.moneyStyle.copyWith(
               color: valueColor,
               fontSize: 14,

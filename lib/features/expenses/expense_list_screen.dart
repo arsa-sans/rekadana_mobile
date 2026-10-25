@@ -255,10 +255,13 @@ class _ExpenseListScreenState extends State<ExpenseListScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
-                    'Nominal Pengajuan:',
-                    style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
+                  const Expanded(
+                    child: Text(
+                      'Nominal Pengajuan:',
+                      style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
+                    ),
                   ),
+                  const SizedBox(width: 8),
                   Text(
                     CurrencyFormatter.format(item.requestedAmount),
                     style: AppTheme.moneyStyle,

@@ -285,10 +285,13 @@ class _BendaharaReviewScreenState extends State<BendaharaReviewScreen> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
-                    'Nominal Diajukan:',
-                    style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
+                  const Expanded(
+                    child: Text(
+                      'Nominal Diajukan:',
+                      style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
+                    ),
                   ),
+                  const SizedBox(width: 8),
                   Text(
                     CurrencyFormatter.format(request.requestedAmount),
                     style: AppTheme.moneyLargeStyle.copyWith(color: AppColors.primary700),
@@ -379,10 +382,13 @@ class _BendaharaReviewScreenState extends State<BendaharaReviewScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
-                  'Nominal:',
-                  style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
+                const Expanded(
+                  child: Text(
+                    'Nominal:',
+                    style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
+                  ),
                 ),
+                const SizedBox(width: 8),
                 Text(
                   CurrencyFormatter.format(request.requestedAmount),
                   style: AppTheme.moneyStyle,

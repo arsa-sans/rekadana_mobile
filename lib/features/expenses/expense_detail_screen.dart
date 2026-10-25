@@ -147,10 +147,13 @@ class ExpenseDetailScreen extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(
-          label,
-          style: const TextStyle(fontSize: 14, color: AppColors.textSecondary),
+        Expanded(
+          child: Text(
+            label,
+            style: const TextStyle(fontSize: 14, color: AppColors.textSecondary),
+          ),
         ),
+        const SizedBox(width: 8),
         Text(
           value,
           style: isEmphasized
