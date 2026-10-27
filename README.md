@@ -1,17 +1,74 @@
-# rekadana_mobile
+# RekaDana — Mobile
 
-A new Flutter project.
+Aplikasi Android untuk anggota panitia dan bendahara kegiatan sekolah. Menangani pengajuan pengeluaran lapangan, upload bukti, dan review approval secara mobile. Mengonsumsi REST API dari aplikasi web RekaDana.
 
-## Getting Started
+## Stack
 
-This project is a starting point for a Flutter application.
+- **Framework:** Flutter (Dart)
+- **Target platform:** Android (API level 21+)
+- **HTTP client:** Dio
+- **Auth storage:** flutter_secure_storage
+- **Image picker:** image_picker
+- **Font:** Plus Jakarta Sans (Google Fonts)
 
-A few resources to get you started if this is your first Flutter project:
+## Struktur
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
+```
+lib/
+  core/
+    constants/      # Warna (AppColors), tema (AppTheme), URL base
+    network/        # ApiClient (Dio singleton, token interceptor, error mapping)
+    storage/        # SecureStorageService (token, base URL)
+    utils/          # CurrencyFormatter, DateFormatter
+    widgets/        # StateViews (loading, error, empty), StatusBadge
+  features/
+    auth/           # Login screen, auth service, user model
+    organization/   # Org selection, events list, models
+    expenses/       # Expense list, create, detail, service, models
+    approval/       # Bendahara review screen
+  main.dart
+```
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## Menjalankan secara lokal
+
+### Prasyarat
+
+- Flutter SDK ≥ 3.12
+- Android emulator atau device fisik
+
+### Setup
+
+```bash
+# Install dependencies
+flutter pub get
+
+# Pastikan base URL server sudah dikonfigurasi
+# Buka lib/core/constants/ dan sesuaikan URL jika perlu
+
+# Jalankan di emulator/device
+flutter run
+```
+
+### Perintah lain
+
+```bash
+flutter analyze         # Static analysis
+flutter test            # Unit & widget tests
+flutter build apk       # Build APK release
+```
+
+## Konfigurasi server
+
+Aplikasi membaca base URL dari `SecureStorageService`. Untuk development, arahkan ke server lokal Next.js (`http://10.0.2.2:3000` dari emulator Android).
+
+## Peran pengguna
+
+| Role | Fitur utama di mobile |
+|------|----------------------|
+| Panitia/Anggota | Ajukan pengeluaran, upload bukti, pantau status |
+| Bendahara | Review dan approve/reject permintaan pengeluaran |
+| Ketua Kegiatan | Lihat status kegiatan dan ringkasan keuangan |
+
+## Repo terkait
+
+- [`RekaDana`](https://github.com/arsa-sans/RekaDana) — Web dashboard dan backend API
