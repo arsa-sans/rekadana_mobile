@@ -23,6 +23,8 @@ class ApiClient {
   static final ApiClient _instance = ApiClient._internal();
   factory ApiClient() => _instance;
 
+  static void Function()? onSessionExpired;
+
   late Dio _dio;
   final SecureStorageService _storage = SecureStorageService();
 
@@ -89,6 +91,11 @@ class ApiClient {
     }
 
     final response = e.response;
+    if (response?.statusCode == 401) {
+      _storage.clearSession();
+      onSessionExpired?.call();
+    }
+
     if (response != null && response.data is Map<String, dynamic>) {
       final data = response.data as Map<String, dynamic>;
       final errorObj = data['error'];

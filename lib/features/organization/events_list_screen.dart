@@ -84,6 +84,13 @@ class _EventsListScreenState extends State<EventsListScreen> {
       backgroundColor: AppColors.surfaceMuted,
       appBar: AppBar(
         title: Text(widget.organization.name),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.swap_horiz, color: AppColors.textSecondary),
+            tooltip: 'Ganti Organisasi',
+            onPressed: () => Navigator.of(context).pop(),
+          ),
+        ],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(26),
           child: Padding(

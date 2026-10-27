@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'core/constants/app_theme.dart';
+import 'core/network/api_client.dart';
 import 'core/widgets/state_views.dart';
 import 'features/auth/auth_service.dart';
 import 'features/auth/login_screen.dart';
@@ -14,9 +15,24 @@ void main() {
 class RekaDanaMobileApp extends StatelessWidget {
   const RekaDanaMobileApp({super.key});
 
+  static final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+
   @override
   Widget build(BuildContext context) {
+    // Tangani sesi kedaluwarsa secara reaktif di seluruh aplikasi
+    ApiClient.onSessionExpired = () {
+      navigatorKey.currentState?.pushAndRemoveUntil(
+        MaterialPageRoute(
+          builder: (_) => const LoginScreen(
+            sessionExpiredMessage: 'Sesi Anda telah kedaluwarsa. Silakan masuk kembali.',
+          ),
+        ),
+        (route) => false,
+      );
+    };
+
     return MaterialApp(
+      navigatorKey: navigatorKey,
       title: 'RekaDana Mobile',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
@@ -39,7 +55,8 @@ class _AuthGateScreenState extends State<AuthGateScreen> {
   @override
   void initState() {
     super.initState();
-    _initAuthFuture = _authService.getCachedUser();
+    // Validasi sesi aktif ke server jika ada token tersimpan
+    _initAuthFuture = _authService.verifySession();
   }
 
   @override

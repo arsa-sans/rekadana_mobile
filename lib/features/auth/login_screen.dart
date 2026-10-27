@@ -7,7 +7,8 @@ import '../organization/org_selection_screen.dart';
 import 'auth_service.dart';
 
 class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
+  final String? sessionExpiredMessage;
+  const LoginScreen({super.key, this.sessionExpiredMessage});
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
@@ -195,6 +196,37 @@ class _LoginScreenState extends State<LoginScreen> {
                                 style: const TextStyle(
                                   fontSize: 13,
                                   color: AppColors.statusRejectedText,
+                                  height: 1.3,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                    ] else if (widget.sessionExpiredMessage != null) ...[
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: AppColors.statusDraftBg,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: AppColors.statusDraftBorder, width: 1),
+                        ),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Icon(
+                              Icons.info_outline,
+                              size: 18,
+                              color: AppColors.statusDraftText,
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                widget.sessionExpiredMessage!,
+                                style: const TextStyle(
+                                  fontSize: 13,
+                                  color: AppColors.statusDraftText,
                                   height: 1.3,
                                 ),
                               ),
