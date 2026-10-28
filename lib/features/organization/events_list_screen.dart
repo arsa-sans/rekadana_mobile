@@ -12,6 +12,7 @@ import 'models/event_model.dart';
 import 'models/organization_model.dart';
 import 'models/report_model.dart';
 import 'org_service.dart';
+import 'budget_version_list_screen.dart';
 
 class EventsListScreen extends StatefulWidget {
   final OrganizationModel organization;
@@ -286,6 +287,24 @@ class _EventsListScreenState extends State<EventsListScreen> {
                     Navigator.of(context).push(
                       MaterialPageRoute(
                         builder: (_) => ScenarioListScreen(
+                          organization: widget.organization,
+                          event: event,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+                const SizedBox(height: 8),
+
+                // Tombol Versi Anggaran & Approval Bendahara
+                AppButton(
+                  label: 'Versi Anggaran & Approval Bendahara',
+                  icon: Icons.history_edu_outlined,
+                  isOutlined: true,
+                  onPressed: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => BudgetVersionListScreen(
                           organization: widget.organization,
                           event: event,
                         ),

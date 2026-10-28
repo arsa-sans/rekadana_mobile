@@ -25,6 +25,8 @@ class ApiEndpoints {
   // Endpoint Anggaran
   static String budgets(String eventId) => '/api/v1/events/$eventId/budgets';
   static String budgetVersion(String versionId) => '/api/v1/budget-versions/$versionId';
+  static String approveBudget(String versionId) => '/api/v1/budget-versions/$versionId/approve';
+  static String rejectBudget(String versionId) => '/api/v1/budget-versions/$versionId/reject';
 
   // Endpoint Permintaan Pengeluaran
   static String expenseRequests(String eventId) => '/api/v1/events/$eventId/expense-requests';
