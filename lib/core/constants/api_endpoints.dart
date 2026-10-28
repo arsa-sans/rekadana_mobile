@@ -38,4 +38,9 @@ class ApiEndpoints {
 
   // Endpoint Laporan Realisasi
   static String reportBudgetVsActual(String eventId) => '/api/v1/events/$eventId/reports/budget-vs-actual';
+
+  // Endpoint Scenario Lab
+  static String budgetScenarios(String eventId) => '/api/v1/events/$eventId/budget-scenarios';
+  static String scenarioItems(String scenarioId) => '/api/v1/budget-scenarios/$scenarioId/items';
+  static String submitScenario(String scenarioId) => '/api/v1/budget-scenarios/$scenarioId/submit';
 }

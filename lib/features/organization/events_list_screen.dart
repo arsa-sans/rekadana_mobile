@@ -7,6 +7,7 @@ import '../../core/widgets/state_views.dart';
 import '../approval/bendahara_review_screen.dart';
 import '../expenses/expense_create_screen.dart';
 import '../expenses/expense_list_screen.dart';
+import '../scenarios/scenario_list_screen.dart';
 import 'models/event_model.dart';
 import 'models/organization_model.dart';
 import 'models/report_model.dart';
@@ -276,6 +277,24 @@ class _EventsListScreenState extends State<EventsListScreen> {
             // Tombol Aksi Lapangan
             Column(
               children: [
+                // Tombol Scenario Lab
+                AppButton(
+                  label: 'Scenario Lab (Simulasi Anggaran)',
+                  icon: Icons.science_outlined,
+                  isOutlined: true,
+                  onPressed: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => ScenarioListScreen(
+                          organization: widget.organization,
+                          event: event,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+                const SizedBox(height: 8),
+
                 // Tombol utama: Ajukan Pengeluaran
                 AppButton(
                   label: 'Ajukan Pengeluaran Lapangan',
