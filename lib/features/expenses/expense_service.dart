@@ -114,6 +114,13 @@ class ExpenseService {
     );
   }
 
+  // Ambil rincian lengkap pengeluaran termasuk ringkasan saldo & riwayat pembayaran
+  Future<ExpenseRequestDetailModel> getExpenseDetail(String requestId) async {
+    final response = await _api.get(ApiEndpoints.expenseRequestDetail(requestId));
+    final data = response['data'] as Map<String, dynamic>;
+    return ExpenseRequestDetailModel.fromJson(data);
+  }
+
   // Persetujuan pengeluaran oleh Bendahara (larangan self-approval otomatis dicek server)
   Future<void> approveExpense(
     String requestId, {
@@ -139,5 +146,45 @@ class ExpenseService {
       ApiEndpoints.rejectExpense(requestId),
       data: {'reason': reason.trim()},
     );
+  }
+
+  // Pencatatan pembayaran oleh Bendahara dengan idempotensi
+  Future<Map<String, dynamic>> recordPayment(
+    String requestId, {
+    required String idempotencyKey,
+    required String amount,
+    String? notes,
+  }) async {
+    final payload = <String, dynamic>{
+      'idempotencyKey': idempotencyKey.trim(),
+      'amount': amount.trim(),
+    };
+    if (notes != null && notes.trim().isNotEmpty) {
+      payload['notes'] = notes.trim();
+    }
+
+    final response = await _api.post(
+      ApiEndpoints.postPayment(requestId),
+      data: payload,
+    );
+
+    return response['data'] as Map<String, dynamic>? ?? {};
+  }
+
+  // Pembatalan pembayaran (reversal) oleh Bendahara
+  Future<Map<String, dynamic>> reversePayment(
+    String paymentId, {
+    required String amount,
+    required String reason,
+  }) async {
+    final response = await _api.post(
+      ApiEndpoints.reversePayment(paymentId),
+      data: {
+        'amount': amount.trim(),
+        'reason': reason.trim(),
+      },
+    );
+
+    return response['data'] as Map<String, dynamic>? ?? {};
   }
 }
