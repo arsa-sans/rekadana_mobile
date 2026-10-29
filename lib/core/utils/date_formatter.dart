@@ -13,9 +13,14 @@ class DateFormatter {
       return '-';
     }
 
-    // Menggunakan nama bulan Bahasa Indonesia
-    final formatter = DateFormat('d MMM yyyy, HH:mm', 'id_ID');
-    return '${formatter.format(dt.toLocal())} WIB';
+    // Menggunakan nama bulan Bahasa Indonesia dengan fallback aman
+    try {
+      final formatter = DateFormat('d MMM yyyy, HH:mm', 'id_ID');
+      return '${formatter.format(dt.toLocal())} WIB';
+    } catch (_) {
+      final formatter = DateFormat('d MMM yyyy, HH:mm');
+      return '${formatter.format(dt.toLocal())} WIB';
+    }
   }
 
   static String formatDate(dynamic date) {
@@ -29,7 +34,12 @@ class DateFormatter {
       return '-';
     }
 
-    final formatter = DateFormat('d MMMM yyyy', 'id_ID');
-    return formatter.format(dt.toLocal());
+    try {
+      final formatter = DateFormat('d MMMM yyyy', 'id_ID');
+      return formatter.format(dt.toLocal());
+    } catch (_) {
+      final formatter = DateFormat('d MMMM yyyy');
+      return formatter.format(dt.toLocal());
+    }
   }
 }
