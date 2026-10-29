@@ -30,9 +30,11 @@ class ApiEndpoints {
 
   // Endpoint Permintaan Pengeluaran
   static String expenseRequests(String eventId) => '/api/v1/events/$eventId/expense-requests';
+  static String expenseRequestDetail(String requestId) => '/api/v1/expense-requests/$requestId';
   static String approveExpense(String requestId) => '/api/v1/expense-requests/$requestId/approve';
   static String rejectExpense(String requestId) => '/api/v1/expense-requests/$requestId/reject';
   static String postPayment(String requestId) => '/api/v1/expense-requests/$requestId/payments';
+  static String reversePayment(String paymentId) => '/api/v1/payments/$paymentId/reverse';
 
   // Endpoint Bukti Transaksi
   static const String evidence = '/api/v1/evidence';
