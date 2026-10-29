@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 // Seluruh kombinasi warna telah diverifikasi memenuhi standar kontras WCAG AA (>= 4.5:1 untuk teks normal).
 class AppColors {
   // Palet primer: Indigo profesional untuk aplikasi tata kelola keuangan
+  static const Color primary = primary600;
   static const Color primary50 = Color(0xFFEEF2FF);
   static const Color primary100 = Color(0xFFE0E7FF);
   static const Color primary200 = Color(0xFFC7D2FE);
