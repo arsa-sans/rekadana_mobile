@@ -189,4 +189,18 @@ class ApiClient {
       throw ApiException(message: e.message ?? 'Gagal mengunggah file.');
     }
   }
+
+  // Helper metode unduh byte biner (untuk bukti privat)
+  Future<List<int>> getBytes(String path) async {
+    try {
+      final response = await _dio.get<List<int>>(
+        path,
+        options: Options(responseType: ResponseType.bytes),
+      );
+      return response.data ?? [];
+    } on DioException catch (e) {
+      if (e.error is ApiException) throw e.error as ApiException;
+      throw ApiException(message: e.message ?? 'Gagal mengunduh file.');
+    }
+  }
 }
