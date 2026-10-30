@@ -1,4 +1,6 @@
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_theme.dart';
 import '../../core/utils/currency_formatter.dart';
@@ -13,6 +15,7 @@ class ExpenseDetailScreen extends StatefulWidget {
   final OrganizationModel organization;
   final ExpenseService? service;
   final ExpenseRequestDetailModel? initialDetail;
+  final List<EvidenceModel>? initialEvidence;
 
   const ExpenseDetailScreen({
     super.key,
@@ -20,6 +23,7 @@ class ExpenseDetailScreen extends StatefulWidget {
     required this.organization,
     this.service,
     this.initialDetail,
+    this.initialEvidence,
   });
 
   @override
@@ -32,6 +36,12 @@ class _ExpenseDetailScreenState extends State<ExpenseDetailScreen> {
   late bool _isLoading;
   String? _errorMessage;
 
+  List<EvidenceModel> _evidenceList = [];
+  bool _isLoadingEvidence = false;
+  bool _isUploadingEvidence = false;
+  double _evidenceUploadProgress = 0.0;
+  final ImagePicker _picker = ImagePicker();
+
   @override
   void initState() {
     super.initState();
@@ -40,6 +50,11 @@ class _ExpenseDetailScreenState extends State<ExpenseDetailScreen> {
     _isLoading = widget.initialDetail == null;
     if (widget.initialDetail == null) {
       _loadDetail();
+    }
+    _evidenceList = widget.initialEvidence ?? [];
+    _isLoadingEvidence = widget.initialEvidence == null && widget.initialDetail == null;
+    if (widget.initialEvidence == null && widget.initialDetail == null) {
+      _loadEvidence();
     }
   }
 
@@ -65,6 +80,226 @@ class _ExpenseDetailScreenState extends State<ExpenseDetailScreen> {
         });
       }
     }
+  }
+
+  Future<void> _loadEvidence() async {
+    setState(() => _isLoadingEvidence = true);
+    try {
+      final list = await _service.listEvidence(widget.expense.id);
+      if (mounted) {
+        setState(() {
+          _evidenceList = list;
+          _isLoadingEvidence = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() => _isLoadingEvidence = false);
+    }
+  }
+
+  Future<void> _handleUploadEvidenceFromDetail() async {
+    final picked = await _picker.pickImage(
+      source: ImageSource.gallery,
+      maxWidth: 1600,
+      maxHeight: 1600,
+      imageQuality: 85,
+    );
+    if (picked == null || !mounted) return;
+
+    final fileLength = await picked.length();
+    if (fileLength > kMaxEvidenceBytes) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Ukuran file foto melebihi batas 5 MiB. Pilih foto yang lebih kecil.'),
+            backgroundColor: AppColors.statusRejectedText,
+          ),
+        );
+      }
+      return;
+    }
+
+    setState(() {
+      _isUploadingEvidence = true;
+      _evidenceUploadProgress = 0.0;
+    });
+
+    try {
+      await _service.uploadEvidence(
+        organizationId: widget.organization.id,
+        expenseRequestId: widget.expense.id,
+        filePath: picked.path,
+        onProgress: (sent, total) {
+          if (total > 0 && mounted) {
+            setState(() => _evidenceUploadProgress = sent / total);
+          }
+        },
+      );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Bukti transaksi berhasil diunggah.'),
+          backgroundColor: AppColors.statusApprovedText,
+        ),
+      );
+      _loadEvidence();
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(e.toString().replaceAll('Exception: ', '')),
+          backgroundColor: AppColors.statusRejectedText,
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _isUploadingEvidence = false);
+    }
+  }
+
+  Future<void> _openEvidenceDownload(EvidenceModel item) async {
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (ctx) {
+        return FutureBuilder<List<int>>(
+          future: _service.downloadEvidenceBytes(item.id),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(
+                child: Card(
+                  child: Padding(
+                    padding: EdgeInsets.all(24.0),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        CircularProgressIndicator(),
+                        SizedBox(height: 16),
+                        Text('Mengambil bukti transaksi...'),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            }
+
+            if (snapshot.hasError) {
+              return AlertDialog(
+                title: const Text('Gagal Membuka Bukti'),
+                content: Text('Terjadi kendala saat mengunduh berkas: ${snapshot.error}'),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.of(ctx).pop(),
+                    child: const Text('Tutup'),
+                  ),
+                ],
+              );
+            }
+
+            final bytes = snapshot.data;
+            if (bytes == null || bytes.isEmpty) {
+              return AlertDialog(
+                title: const Text('Berkas Kosong'),
+                content: const Text('File bukti tidak berisi data.'),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.of(ctx).pop(),
+                    child: const Text('Tutup'),
+                  ),
+                ],
+              );
+            }
+
+            final isImage = item.detectedFileType == 'jpeg' || item.detectedFileType == 'png';
+
+            return Dialog(
+              backgroundColor: AppColors.surface,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 480, maxHeight: 600),
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              item.originalFileName,
+                              style: const TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.textPrimary,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.close, size: 20),
+                            onPressed: () => Navigator.of(ctx).pop(),
+                          ),
+                        ],
+                      ),
+                      const Divider(),
+                      const SizedBox(height: 8),
+                      if (isImage)
+                        Flexible(
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: InteractiveViewer(
+                              child: Image.memory(
+                                Uint8List.fromList(bytes),
+                                fit: BoxFit.contain,
+                              ),
+                            ),
+                          ),
+                        )
+                      else
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 32.0),
+                          child: Column(
+                            children: [
+                              const Icon(Icons.picture_as_pdf, size: 64, color: AppColors.statusRejectedText),
+                              const SizedBox(height: 16),
+                              Text(
+                                item.originalFileName,
+                                style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+                                textAlign: TextAlign.center,
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                'Ukuran: ${item.formattedSize} • Format: PDF',
+                                style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
+                              ),
+                              const SizedBox(height: 12),
+                              const Text(
+                                'Dokumen PDF tersimpan aman di private storage dan diverifikasi.',
+                                style: TextStyle(color: AppColors.textMuted, fontSize: 12),
+                                textAlign: TextAlign.center,
+                              ),
+                            ],
+                          ),
+                        ),
+                      const SizedBox(height: 12),
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: TextButton(
+                          onPressed: () => Navigator.of(ctx).pop(),
+                          child: const Text('Selesai'),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
   }
 
   ExpenseRequestModel get _currentExpense =>
@@ -870,10 +1105,150 @@ class _ExpenseDetailScreenState extends State<ExpenseDetailScreen> {
                   )
                 else
                   ..._detail!.payments.map((p) => _buildPaymentCard(p, isBendahara)),
+
+                // Bagian Bukti Transaksi
+                const SizedBox(height: 24),
+                _buildEvidenceSection(),
               ],
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildEvidenceSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text(
+              'Bukti Transaksi / Nota',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: AppColors.textPrimary,
+              ),
+            ),
+            if (_isLoadingEvidence)
+              const SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
+            else
+              Text(
+                '${_evidenceList.length} file',
+                style: const TextStyle(fontSize: 12, color: AppColors.textMuted),
+              ),
+          ],
+        ),
+        const SizedBox(height: 10),
+
+        // Daftar bukti
+        if (!_isLoadingEvidence && _evidenceList.isEmpty)
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppColors.border),
+            ),
+            child: const Center(
+              child: Text(
+                'Belum ada nota atau bukti yang dilampirkan.',
+                style: TextStyle(fontSize: 13, color: AppColors.textMuted),
+              ),
+            ),
+          )
+        else
+          ...(_evidenceList.map((item) => _buildEvidenceCard(item))),
+
+        const SizedBox(height: 12),
+
+        // Tombol unggah bukti baru
+        if (_isUploadingEvidence) ...[
+          LinearProgressIndicator(
+            value: _evidenceUploadProgress > 0 ? _evidenceUploadProgress : null,
+            backgroundColor: AppColors.primary50,
+            valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primary700),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            _evidenceUploadProgress > 0
+                ? 'Mengunggah: ${(_evidenceUploadProgress * 100).toInt()}%'
+                : 'Mempersiapkan unggahan...',
+            textAlign: TextAlign.center,
+            style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+          ),
+          const SizedBox(height: 8),
+        ] else
+          OutlinedButton.icon(
+            onPressed: _handleUploadEvidenceFromDetail,
+            icon: const Icon(Icons.add_a_photo_outlined, size: 18),
+            label: const Text('Lampirkan Bukti Baru'),
+            style: OutlinedButton.styleFrom(
+              minimumSize: const Size(double.infinity, 44),
+              side: const BorderSide(color: AppColors.primary500),
+              foregroundColor: AppColors.primary700,
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildEvidenceCard(EvidenceModel item) {
+    final isPdf = item.detectedFileType == 'pdf';
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            isPdf ? Icons.picture_as_pdf_outlined : Icons.image_outlined,
+            size: 20,
+            color: isPdf ? AppColors.statusRejectedText : AppColors.primary700,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  item.originalFileName,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                    color: AppColors.textPrimary,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  item.formattedSize,
+                  style: const TextStyle(fontSize: 11, color: AppColors.textMuted),
+                ),
+              ],
+            ),
+          ),
+          TextButton(
+            onPressed: () => _openEvidenceDownload(item),
+            style: TextButton.styleFrom(
+              foregroundColor: AppColors.primary700,
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+            ),
+            child: const Text('Buka'),
+          ),
+        ],
       ),
     );
   }
