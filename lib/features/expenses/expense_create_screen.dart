@@ -83,6 +83,18 @@ class _ExpenseCreateScreenState extends State<ExpenseCreateScreen> {
         imageQuality: 85,
       );
       if (picked != null && mounted) {
+        final fileLength = await picked.length();
+        if (fileLength > kMaxEvidenceBytes) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Ukuran file foto melebihi batas 5 MiB. Pilih foto yang lebih kecil.'),
+                backgroundColor: AppColors.statusRejectedText,
+              ),
+            );
+          }
+          return;
+        }
         setState(() {
           _selectedImage = picked;
         });
