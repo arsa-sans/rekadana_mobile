@@ -39,6 +39,8 @@ class ApiEndpoints {
   // Endpoint Bukti Transaksi
   static const String evidence = '/api/v1/evidence';
   static String evidenceDownload(String evidenceId) => '/api/v1/evidence/$evidenceId/download';
+  static String evidenceByRequest(String requestId) =>
+      '/api/v1/expense-requests/$requestId/evidence';
 
   // Endpoint Laporan Realisasi
   static String reportBudgetVsActual(String eventId) => '/api/v1/events/$eventId/reports/budget-vs-actual';
