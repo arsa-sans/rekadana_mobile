@@ -1,3 +1,37 @@
+class EvidenceModel {
+  final String id;
+  final String originalFileName;
+  final String detectedFileType;
+  final int fileSizeBytes;
+  final String? createdAt;
+
+  EvidenceModel({
+    required this.id,
+    required this.originalFileName,
+    required this.detectedFileType,
+    required this.fileSizeBytes,
+    this.createdAt,
+  });
+
+  factory EvidenceModel.fromJson(Map<String, dynamic> json) {
+    return EvidenceModel(
+      id: json['id'] as String,
+      originalFileName: json['originalFileName'] as String? ?? '',
+      detectedFileType: json['detectedFileType'] as String? ?? 'jpeg',
+      fileSizeBytes: (json['fileSizeBytes'] as num?)?.toInt() ?? 0,
+      createdAt: json['createdAt']?.toString(),
+    );
+  }
+
+  String get formattedSize {
+    if (fileSizeBytes < 1024) return '$fileSizeBytes B';
+    if (fileSizeBytes < 1024 * 1024) {
+      return '${(fileSizeBytes / 1024).toStringAsFixed(1)} KB';
+    }
+    return '${(fileSizeBytes / (1024 * 1024)).toStringAsFixed(1)} MB';
+  }
+}
+
 class ExpenseRequestModel {
   final String id;
   final String eventId;
