@@ -7,6 +7,9 @@ import '../../core/network/api_client.dart';
 import 'models/budget_item_model.dart';
 import 'models/expense_request_model.dart';
 
+// Batas ukuran file yang harus sama dengan server (5 MiB)
+const int kMaxEvidenceBytes = 5242880;
+
 class ExpenseService {
   final ApiClient _api = ApiClient();
 
@@ -85,6 +88,15 @@ class ExpenseService {
     void Function(int, int)? onProgress,
   }) async {
     final file = File(filePath);
+    final fileSize = await file.length();
+
+    if (fileSize > kMaxEvidenceBytes) {
+      throw Exception(
+        'Ukuran file melebihi batas maksimal 5 MiB. '
+        'Ukuran file: ${(fileSize / 1024 / 1024).toStringAsFixed(1)} MB.',
+      );
+    }
+
     final fileName = p.basename(filePath);
     final ext = p.extension(filePath).toLowerCase();
 
@@ -112,6 +124,22 @@ class ExpenseService {
       formData,
       onSendProgress: onProgress,
     );
+  }
+
+  // Ambil daftar bukti yang dilampirkan pada permintaan pengeluaran
+  Future<List<EvidenceModel>> listEvidence(String expenseRequestId) async {
+    final response = await _api.get(
+      ApiEndpoints.evidenceByRequest(expenseRequestId),
+    );
+    final list = response['data'] as List<dynamic>? ?? [];
+    return list
+        .map((item) => EvidenceModel.fromJson(item as Map<String, dynamic>))
+        .toList();
+  }
+
+  // Unduh isi biner file bukti (terotentikasi)
+  Future<List<int>> downloadEvidenceBytes(String evidenceId) async {
+    return await _api.getBytes(ApiEndpoints.evidenceDownload(evidenceId));
   }
 
   // Ambil rincian lengkap pengeluaran termasuk ringkasan saldo & riwayat pembayaran
