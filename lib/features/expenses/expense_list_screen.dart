@@ -15,11 +15,13 @@ import 'models/expense_request_model.dart';
 class ExpenseListScreen extends StatefulWidget {
   final OrganizationModel organization;
   final EventModel event;
+  final List<ExpenseRequestModel>? initialExpenses;
 
   const ExpenseListScreen({
     super.key,
     required this.organization,
     required this.event,
+    this.initialExpenses,
   });
 
   @override
@@ -37,7 +39,12 @@ class _ExpenseListScreenState extends State<ExpenseListScreen> {
   @override
   void initState() {
     super.initState();
-    _fetchExpenses();
+    if (widget.initialExpenses != null) {
+      _allExpenses = widget.initialExpenses!;
+      _isLoading = false;
+    } else {
+      _fetchExpenses();
+    }
   }
 
   Future<void> _fetchExpenses() async {
@@ -65,6 +72,15 @@ class _ExpenseListScreenState extends State<ExpenseListScreen> {
   List<ExpenseRequestModel> get _filteredExpenses {
     if (_selectedFilter == 'all') return _allExpenses;
     return _allExpenses.where((e) => e.status.toLowerCase() == _selectedFilter).toList();
+  }
+
+  // Hitungan per status dari seluruh data (bukan filter aktif)
+  Map<String, int> get _statusCounts {
+    final counts = <String, int>{};
+    for (final e in _allExpenses) {
+      counts[e.status] = (counts[e.status] ?? 0) + 1;
+    }
+    return counts;
   }
 
   void _navigateToCreate() async {
@@ -121,6 +137,10 @@ class _ExpenseListScreenState extends State<ExpenseListScreen> {
             ),
             const Divider(height: 1),
 
+            // Ringkasan status (hanya tampil saat data sudah dimuat)
+            if (!_isLoading && _errorMessage == null && _allExpenses.isNotEmpty)
+              _buildStatusSummary(),
+
             Expanded(
               child: RefreshIndicator(
                 onRefresh: _fetchExpenses,
@@ -164,6 +184,53 @@ class _ExpenseListScreenState extends State<ExpenseListScreen> {
         color: isSelected ? AppColors.primary500 : AppColors.border,
         width: 1,
       ),
+    );
+  }
+
+  Widget _buildStatusSummary() {
+    final counts = _statusCounts;
+    final submittedCount = counts['submitted'] ?? 0;
+    final approvedCount = counts['approved'] ?? 0;
+    final partiallyPaidCount = counts['partially_paid'] ?? 0;
+    final paidCount = counts['paid'] ?? 0;
+    final rejectedCount = counts['rejected'] ?? 0;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0),
+      color: AppColors.surface,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        children: [
+          _buildSummaryItem('Diajukan', submittedCount, AppColors.statusSubmittedText),
+          _buildSummaryItem('Disetujui', approvedCount, AppColors.statusApprovedText),
+          _buildSummaryItem('Dibayar', paidCount + partiallyPaidCount, AppColors.statusPaidText),
+          _buildSummaryItem('Ditolak', rejectedCount, AppColors.statusRejectedText),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSummaryItem(String label, int count, Color color) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          count.toString(),
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w700,
+            color: color,
+          ),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 11,
+            color: AppColors.textSecondary,
+          ),
+        ),
+      ],
     );
   }
 
