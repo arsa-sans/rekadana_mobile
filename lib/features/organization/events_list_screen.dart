@@ -16,10 +16,14 @@ import 'budget_version_list_screen.dart';
 
 class EventsListScreen extends StatefulWidget {
   final OrganizationModel organization;
+  final List<EventModel>? initialEvents;
+  final Map<String, BudgetVsActualReportModel>? initialReports;
 
   const EventsListScreen({
     super.key,
     required this.organization,
+    this.initialEvents,
+    this.initialReports,
   });
 
   @override
@@ -37,7 +41,15 @@ class _EventsListScreenState extends State<EventsListScreen> {
   @override
   void initState() {
     super.initState();
-    _fetchEvents();
+    if (widget.initialEvents != null) {
+      _events = widget.initialEvents;
+      if (widget.initialReports != null) {
+        _reportsMap.addAll(widget.initialReports!);
+      }
+      _isLoading = false;
+    } else {
+      _fetchEvents();
+    }
   }
 
   Future<void> _fetchEvents() async {
