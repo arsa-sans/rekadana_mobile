@@ -14,11 +14,13 @@ import 'models/budget_item_model.dart';
 class ExpenseCreateScreen extends StatefulWidget {
   final OrganizationModel organization;
   final EventModel event;
+  final List<BudgetItemModel>? initialBudgetItems;
 
   const ExpenseCreateScreen({
     super.key,
     required this.organization,
     required this.event,
+    this.initialBudgetItems,
   });
 
   @override
@@ -46,7 +48,12 @@ class _ExpenseCreateScreenState extends State<ExpenseCreateScreen> {
   @override
   void initState() {
     super.initState();
-    _loadBudgetItems();
+    if (widget.initialBudgetItems != null) {
+      _budgetItems = widget.initialBudgetItems!;
+      _isLoadingItems = false;
+    } else {
+      _loadBudgetItems();
+    }
   }
 
   @override
