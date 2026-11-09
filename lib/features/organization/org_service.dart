@@ -21,6 +21,44 @@ class OrgService {
     return list.map((item) => EventModel.fromJson(item as Map<String, dynamic>)).toList();
   }
 
+  // Buat organisasi baru
+  Future<OrganizationModel> createOrganization({
+    required String name,
+    required String slug,
+  }) async {
+    final response = await _api.post(
+      ApiEndpoints.organizations,
+      data: {
+        'name': name.trim(),
+        'slug': slug.trim(),
+      },
+    );
+    final data = response['data'] as Map<String, dynamic>;
+    return OrganizationModel.fromJson(data);
+  }
+
+  // Buat kegiatan baru pada organisasi
+  Future<EventModel> createEvent(
+    String orgId, {
+    required String name,
+    String? description,
+    int participantCount = 0,
+    String availableFunds = '0',
+  }) async {
+    final response = await _api.post(
+      ApiEndpoints.events(orgId),
+      data: {
+        'name': name.trim(),
+        if (description != null && description.trim().isNotEmpty)
+          'description': description.trim(),
+        'participantCount': participantCount,
+        'availableFunds': availableFunds,
+      },
+    );
+    final data = response['data'] as Map<String, dynamic>;
+    return EventModel.fromJson(data);
+  }
+
   // Ambil ringkasan finansial dan rekonsiliasi Anggaran vs Realisasi
   Future<BudgetVsActualReportModel> getBudgetReport(String eventId) async {
     final response = await _api.get(ApiEndpoints.reportBudgetVsActual(eventId));
