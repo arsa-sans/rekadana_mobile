@@ -16,11 +16,13 @@ import '../organization/models/organization_model.dart';
 class BendaharaReviewScreen extends StatefulWidget {
   final OrganizationModel organization;
   final EventModel event;
+  final List<ExpenseRequestModel>? initialRequests;
 
   const BendaharaReviewScreen({
     super.key,
     required this.organization,
     required this.event,
+    this.initialRequests,
   });
 
   @override
@@ -39,7 +41,12 @@ class _BendaharaReviewScreenState extends State<BendaharaReviewScreen> {
   @override
   void initState() {
     super.initState();
-    _loadUserAndData();
+    if (widget.initialRequests != null) {
+      _allRequests = widget.initialRequests!;
+      _isLoading = false;
+    } else {
+      _loadUserAndData();
+    }
   }
 
   Future<void> _loadUserAndData() async {
