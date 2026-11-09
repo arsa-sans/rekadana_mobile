@@ -5,6 +5,7 @@ import '../../core/widgets/app_button.dart';
 import '../../core/widgets/app_text_field.dart';
 import '../organization/org_selection_screen.dart';
 import 'auth_service.dart';
+import 'register_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   final String? sessionExpiredMessage;
@@ -286,6 +287,33 @@ class _LoginScreenState extends State<LoginScreen> {
                       label: 'Masuk ke Akun',
                       isLoading: _isLoading,
                       onPressed: _handleLogin,
+                    ),
+                    const SizedBox(height: 16),
+
+                    Wrap(
+                      alignment: WrapAlignment.center,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      children: [
+                        const Text(
+                          'Belum memiliki akun? ',
+                          style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
+                        ),
+                        GestureDetector(
+                          onTap: () {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(builder: (_) => const RegisterScreen()),
+                            );
+                          },
+                          child: const Text(
+                            'Daftar akun baru',
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.primary700,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
