@@ -3,6 +3,8 @@ import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_theme.dart';
 import '../../core/utils/currency_formatter.dart';
 import '../../core/widgets/app_button.dart';
+import '../../core/widgets/app_text_field.dart';
+import '../../core/widgets/currency_input_field.dart';
 import '../../core/widgets/state_views.dart';
 import '../approval/bendahara_review_screen.dart';
 import '../expenses/expense_create_screen.dart';
@@ -92,6 +94,132 @@ class _EventsListScreenState extends State<EventsListScreen> {
     }
   }
 
+  void _showCreateEventDialog() {
+    final nameCtrl = TextEditingController();
+    final descCtrl = TextEditingController();
+    final fundsCtrl = TextEditingController();
+    final participantsCtrl = TextEditingController(text: '0');
+    final formKey = GlobalKey<FormState>();
+    bool isSubmitting = false;
+    String? dialogError;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setDialogState) {
+          return AlertDialog(
+            title: const Text('Buat Kegiatan Baru'),
+            content: SingleChildScrollView(
+              child: Form(
+                key: formKey,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (dialogError != null) ...[
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        margin: const EdgeInsets.only(bottom: 12),
+                        decoration: BoxDecoration(
+                          color: AppColors.statusRejectedBg,
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(color: AppColors.statusRejectedBorder),
+                        ),
+                        child: Text(
+                          dialogError!,
+                          style: const TextStyle(fontSize: 12, color: AppColors.statusRejectedText),
+                        ),
+                      ),
+                    ],
+                    AppTextField(
+                      controller: nameCtrl,
+                      label: 'Nama Kegiatan',
+                      hint: 'Contoh: LDKS 2026',
+                      validator: (v) {
+                        if (v == null || v.trim().length < 3) {
+                          return 'Nama kegiatan minimal 3 karakter.';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    AppTextField(
+                      controller: descCtrl,
+                      label: 'Deskripsi Kegiatan (opsional)',
+                      hint: 'Ringkasan tujuan kegiatan',
+                      maxLines: 2,
+                    ),
+                    const SizedBox(height: 12),
+                    CurrencyInputField(
+                      controller: fundsCtrl,
+                      label: 'Pagu Dana Tersedia (Rp)',
+                      helperText: 'Alokasi pagu dana kas organisasi',
+                    ),
+                    const SizedBox(height: 12),
+                    AppTextField(
+                      controller: participantsCtrl,
+                      label: 'Target Peserta',
+                      hint: '0',
+                      keyboardType: TextInputType.number,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: isSubmitting ? null : () => Navigator.pop(ctx),
+                child: const Text('Batal'),
+              ),
+              ElevatedButton(
+                onPressed: isSubmitting
+                    ? null
+                    : () async {
+                        if (!formKey.currentState!.validate()) return;
+                        final messenger = ScaffoldMessenger.of(context);
+                        setDialogState(() {
+                          isSubmitting = true;
+                          dialogError = null;
+                        });
+                        try {
+                          final cleanFunds = CurrencyFormatter.cleanToNumeric(fundsCtrl.text);
+                          final participants = int.tryParse(participantsCtrl.text.trim()) ?? 0;
+                          await _orgService.createEvent(
+                            widget.organization.id,
+                            name: nameCtrl.text.trim(),
+                            description: descCtrl.text.trim(),
+                            participantCount: participants,
+                            availableFunds: cleanFunds.isEmpty ? '0' : cleanFunds,
+                          );
+                          if (ctx.mounted) Navigator.pop(ctx);
+                          if (!mounted) return;
+                          messenger.showSnackBar(
+                            const SnackBar(content: Text('Kegiatan berhasil dibuat.')),
+                          );
+                          _fetchEvents();
+                        } catch (err) {
+                          setDialogState(() {
+                            isSubmitting = false;
+                            dialogError = err.toString();
+                          });
+                        }
+                      },
+                child: isSubmitting
+                    ? const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                      )
+                    : const Text('Simpan Kegiatan'),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -123,6 +251,14 @@ class _EventsListScreenState extends State<EventsListScreen> {
           ),
         ),
       ),
+      floatingActionButton: (widget.organization.isKetua || widget.organization.isBendahara)
+          ? FloatingActionButton.extended(
+              onPressed: _showCreateEventDialog,
+              icon: const Icon(Icons.add, color: Colors.white),
+              label: const Text('Buat Kegiatan', style: TextStyle(color: Colors.white)),
+              backgroundColor: AppColors.primary700,
+            )
+          : null,
       body: SafeArea(
         child: RefreshIndicator(
           onRefresh: _fetchEvents,
