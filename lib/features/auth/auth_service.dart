@@ -7,6 +7,28 @@ class AuthService {
   final ApiClient _api = ApiClient();
   final SecureStorageService _storage = SecureStorageService();
 
+  Future<UserModel> register({
+    required String name,
+    required String email,
+    required String password,
+  }) async {
+    final response = await _api.post(
+      ApiEndpoints.register,
+      data: {
+        'name': name.trim(),
+        'email': email.trim(),
+        'password': password,
+      },
+    );
+
+    final data = response['data'] as Map<String, dynamic>;
+    final token = data['token'] as String;
+    final userJson = data['user'] as Map<String, dynamic>;
+
+    await _storage.saveSession(token: token, user: userJson);
+    return UserModel.fromJson(userJson);
+  }
+
   // Masuk menggunakan email dan kata sandi
   Future<UserModel> login({
     required String email,
