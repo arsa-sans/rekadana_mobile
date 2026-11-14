@@ -145,7 +145,6 @@ class AppTheme {
     );
   }
 
-  // Tipografi angka finansial dengan spasi proporsional
   static TextStyle get moneyStyle {
     return GoogleFonts.jetBrainsMono(
       fontSize: 15,
