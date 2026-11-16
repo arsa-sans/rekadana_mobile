@@ -13,8 +13,6 @@ class CurrencyFormatter {
     decimalDigits: 2,
   );
 
-  // Format angka atau string desimal menjadi tampilan Rupiah rapi
-  // Contoh: 1500000 -> "Rp1.500.000"
   static String format(dynamic value) {
     if (value == null) return 'Rp0';
 
@@ -33,8 +31,6 @@ class CurrencyFormatter {
     return _formatter.format(number);
   }
 
-  // Bersihkan teks input pengguna hanya menyisakan angka
-  // Contoh: "Rp 1.500.000" -> "1500000"
   static String cleanToNumeric(String input) {
     return input.replaceAll(RegExp(r'[^0-9]'), '');
   }
