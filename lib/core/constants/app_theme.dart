@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'app_colors.dart';
 
@@ -6,17 +7,26 @@ class AppTheme {
   static ThemeData get lightTheme {
     final baseTextTheme = ThemeData.light().textTheme;
     final sansTextTheme = GoogleFonts.plusJakartaSansTextTheme(baseTextTheme);
+    final buttonShape = RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(6),
+    );
+    final buttonTextStyle = GoogleFonts.plusJakartaSans(
+      fontSize: 15,
+      fontWeight: FontWeight.w600,
+    );
 
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.light,
-      primaryColor: AppColors.primary700,
-      scaffoldBackgroundColor: AppColors.surfaceMuted,
+      primaryColor: AppColors.forest,
+      scaffoldBackgroundColor: AppColors.cloud,
       colorScheme: const ColorScheme.light(
-        primary: AppColors.primary700,
-        onPrimary: AppColors.textInverse,
-        primaryContainer: AppColors.primary50,
-        onPrimaryContainer: AppColors.primary900,
+        primary: AppColors.forest,
+        onPrimary: AppColors.onPrimary,
+        secondary: AppColors.growth,
+        onSecondary: AppColors.forest,
+        primaryContainer: AppColors.mint,
+        onPrimaryContainer: AppColors.forest,
         surface: AppColors.surface,
         onSurface: AppColors.textPrimary,
         error: AppColors.statusRejectedText,
@@ -32,6 +42,7 @@ class AppTheme {
         elevation: 0,
         scrolledUnderElevation: 1,
         centerTitle: false,
+        systemOverlayStyle: SystemUiOverlayStyle.dark,
         titleTextStyle: GoogleFonts.plusJakartaSans(
           color: AppColors.textPrimary,
           fontSize: 18,
@@ -46,77 +57,140 @@ class AppTheme {
         color: AppColors.surface,
         elevation: 0,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(10),
           side: const BorderSide(color: AppColors.border, width: 1),
         ),
         margin: EdgeInsets.zero,
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.primary700,
-          foregroundColor: AppColors.textInverse,
-          disabledBackgroundColor: AppColors.border,
-          disabledForegroundColor: AppColors.textMuted,
-          minimumSize: const Size(double.infinity, 48), // Memastikan target sentuh >= 44px
+          backgroundColor: AppColors.forest,
+          foregroundColor: AppColors.onPrimary,
+          // textSecondary pada surfaceRaised memiliki rasio 6.92:1 agar teks disabled tetap terbaca.
+          disabledBackgroundColor: AppColors.surfaceRaised,
+          disabledForegroundColor: AppColors.textSecondary,
+          minimumSize: const Size(double.infinity, 48),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-          ),
-          textStyle: GoogleFonts.plusJakartaSans(
-            fontSize: 15,
-            fontWeight: FontWeight.w600,
-          ),
+          shape: buttonShape,
+          textStyle: buttonTextStyle,
           elevation: 0,
+        ).copyWith(
+          overlayColor: WidgetStateProperty.resolveWith((states) {
+            if (states.contains(WidgetState.hovered) ||
+                states.contains(WidgetState.pressed)) {
+              return AppColors.forestHover;
+            }
+            if (states.contains(WidgetState.focused)) {
+              return AppColors.growth.withValues(alpha: 0.2);
+            }
+            return null;
+          }),
+          side: WidgetStateProperty.resolveWith((states) {
+            if (states.contains(WidgetState.focused)) {
+              return const BorderSide(color: AppColors.growth, width: 2);
+            }
+            return BorderSide.none;
+          }),
         ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
-          foregroundColor: AppColors.textPrimary,
-          side: const BorderSide(color: AppColors.borderStrong, width: 1),
+          backgroundColor: Colors.transparent,
+          foregroundColor: AppColors.forest,
+          side: const BorderSide(color: AppColors.border, width: 1.5),
           minimumSize: const Size(double.infinity, 48),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-          ),
-          textStyle: GoogleFonts.plusJakartaSans(
-            fontSize: 15,
-            fontWeight: FontWeight.w600,
-          ),
+          shape: buttonShape,
+          textStyle: buttonTextStyle,
+        ).copyWith(
+          overlayColor: WidgetStateProperty.resolveWith((states) {
+            if (states.contains(WidgetState.hovered) ||
+                states.contains(WidgetState.pressed) ||
+                states.contains(WidgetState.focused)) {
+              return AppColors.mint;
+            }
+            return null;
+          }),
+          side: WidgetStateProperty.resolveWith((states) {
+            if (states.contains(WidgetState.focused)) {
+              return const BorderSide(color: AppColors.forest, width: 2);
+            }
+            return const BorderSide(color: AppColors.border, width: 1.5);
+          }),
         ),
       ),
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
-          foregroundColor: AppColors.primary700,
+          foregroundColor: AppColors.forest,
           minimumSize: const Size(44, 44),
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          shape: buttonShape,
           textStyle: GoogleFonts.plusJakartaSans(
             fontSize: 14,
             fontWeight: FontWeight.w600,
           ),
+        ).copyWith(
+          overlayColor: WidgetStateProperty.resolveWith((states) {
+            if (states.contains(WidgetState.focused) ||
+                states.contains(WidgetState.hovered) ||
+                states.contains(WidgetState.pressed)) {
+              return AppColors.mint;
+            }
+            return null;
+          }),
+          side: WidgetStateProperty.resolveWith((states) {
+            if (states.contains(WidgetState.focused)) {
+              return const BorderSide(color: AppColors.forest, width: 2);
+            }
+            return BorderSide.none;
+          }),
+        ),
+      ),
+      iconButtonTheme: IconButtonThemeData(
+        style: IconButton.styleFrom(
+          minimumSize: const Size(48, 48),
+          tapTargetSize: MaterialTapTargetSize.padded,
+        ).copyWith(
+          overlayColor: WidgetStateProperty.resolveWith((states) {
+            if (states.contains(WidgetState.focused)) {
+              return AppColors.mint;
+            }
+            return null;
+          }),
+          side: WidgetStateProperty.resolveWith((states) {
+            if (states.contains(WidgetState.focused)) {
+              return const BorderSide(color: AppColors.forest, width: 2);
+            }
+            return BorderSide.none;
+          }),
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: AppColors.surface,
         contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+        hintStyle: GoogleFonts.plusJakartaSans(
+          color: AppColors.textMuted,
+          fontSize: 14,
+        ),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(6),
           borderSide: const BorderSide(color: AppColors.border, width: 1),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(6),
           borderSide: const BorderSide(color: AppColors.border, width: 1),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: AppColors.primary700, width: 2),
+          borderRadius: BorderRadius.circular(6),
+          borderSide: const BorderSide(color: AppColors.growth, width: 2),
         ),
         errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(6),
           borderSide: const BorderSide(color: AppColors.statusRejectedText, width: 1),
         ),
         focusedErrorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(6),
           borderSide: const BorderSide(color: AppColors.statusRejectedText, width: 2),
         ),
         labelStyle: GoogleFonts.plusJakartaSans(
@@ -124,12 +198,13 @@ class AppTheme {
           fontSize: 14,
         ),
         floatingLabelStyle: GoogleFonts.plusJakartaSans(
-          color: AppColors.primary700,
+          color: AppColors.forest,
           fontSize: 13,
           fontWeight: FontWeight.w600,
         ),
+        // helperText dirender di luar kotak input di atas latar Cloud (#F6F8F7), sehingga memakai Slate-600 (7.10:1).
         helperStyle: GoogleFonts.plusJakartaSans(
-          color: AppColors.textMuted,
+          color: AppColors.textSecondary,
           fontSize: 12,
         ),
         errorStyle: GoogleFonts.plusJakartaSans(
@@ -146,18 +221,20 @@ class AppTheme {
   }
 
   static TextStyle get moneyStyle {
-    return GoogleFonts.jetBrainsMono(
+    return GoogleFonts.plusJakartaSans(
       fontSize: 15,
       fontWeight: FontWeight.w600,
       color: AppColors.textPrimary,
+      fontFeatures: const [FontFeature.tabularFigures()],
     );
   }
 
   static TextStyle get moneyLargeStyle {
-    return GoogleFonts.jetBrainsMono(
+    return GoogleFonts.plusJakartaSans(
       fontSize: 20,
       fontWeight: FontWeight.w700,
       color: AppColors.textPrimary,
+      fontFeatures: const [FontFeature.tabularFigures()],
     );
   }
 }
