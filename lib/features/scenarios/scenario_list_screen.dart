@@ -3,6 +3,7 @@ import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_theme.dart';
 import '../../core/utils/currency_formatter.dart';
 import '../../core/widgets/app_button.dart';
+import '../../core/widgets/confirmation_dialog.dart';
 import '../../core/widgets/state_views.dart';
 import '../organization/models/event_model.dart';
 import '../organization/models/organization_model.dart';
@@ -14,11 +15,13 @@ import 'scenario_service.dart';
 class ScenarioListScreen extends StatefulWidget {
   final OrganizationModel organization;
   final EventModel event;
+  final List<ScenarioModel>? initialScenarios;
 
   const ScenarioListScreen({
     super.key,
     required this.organization,
     required this.event,
+    this.initialScenarios,
   });
 
   @override
@@ -35,7 +38,12 @@ class _ScenarioListScreenState extends State<ScenarioListScreen> {
   @override
   void initState() {
     super.initState();
-    _fetchScenarios();
+    if (widget.initialScenarios != null) {
+      _scenarios = widget.initialScenarios;
+      _isLoading = false;
+    } else {
+      _fetchScenarios();
+    }
   }
 
   Future<void> _fetchScenarios() async {
@@ -61,28 +69,13 @@ class _ScenarioListScreenState extends State<ScenarioListScreen> {
   }
 
   Future<void> _confirmSubmit(ScenarioModel scenario) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Ajukan Skenario?'),
-        content: Text(
+    final confirmed = await ConfirmationDialog.show(
+      context,
+      title: 'Ajukan Skenario?',
+      message:
           'Skenario "${scenario.name}" akan dibekukan menjadi versi draf anggaran dan diajukan ke Bendahara untuk diverifikasi. Tindakan ini tidak dapat dibatalkan.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Batal'),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primary700,
-              foregroundColor: Colors.white,
-            ),
-            onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('Ya, Ajukan'),
-          ),
-        ],
-      ),
+      confirmLabel: 'Ya, Ajukan',
+      confirmColor: AppColors.forest,
     );
 
     if (confirmed != true) return;
@@ -94,7 +87,7 @@ class _ScenarioListScreenState extends State<ScenarioListScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Skenario berhasil diajukan ke Bendahara.'),
-          backgroundColor: AppColors.statusApprovedBg,
+          backgroundColor: AppColors.statusApprovedText,
         ),
       );
       _fetchScenarios();
@@ -112,13 +105,13 @@ class _ScenarioListScreenState extends State<ScenarioListScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.surfaceMuted,
+      backgroundColor: AppColors.cloud,
       appBar: AppBar(
         title: const Text('Scenario Lab'),
         actions: [
           if (_scenarios != null && _scenarios!.length < 3)
             IconButton(
-              icon: const Icon(Icons.add_circle_outline),
+              icon: const Icon(Icons.add_circle_outline, color: AppColors.forest),
               tooltip: 'Buat Skenario Baru',
               onPressed: () async {
                 final res = await Navigator.of(context).push<bool>(
@@ -137,7 +130,7 @@ class _ScenarioListScreenState extends State<ScenarioListScreen> {
       body: SafeArea(
         child: RefreshIndicator(
           onRefresh: _fetchScenarios,
-          color: AppColors.primary700,
+          color: AppColors.forest,
           child: _buildBody(),
         ),
       ),
@@ -183,14 +176,14 @@ class _ScenarioListScreenState extends State<ScenarioListScreen> {
         Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: const Color(0xFFFFFBEB),
+            color: AppColors.statusPartialBg,
             borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: const Color(0xFFFDE68A)),
+            border: Border.all(color: AppColors.statusPartialBorder),
           ),
           child: const Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(Icons.warning_amber_rounded, size: 20, color: Color(0xFFD97706)),
+              Icon(Icons.warning_amber_rounded, size: 20, color: AppColors.warning),
               SizedBox(width: 10),
               Expanded(
                 child: Text(
@@ -198,7 +191,7 @@ class _ScenarioListScreenState extends State<ScenarioListScreen> {
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w500,
-                    color: Color(0xFF92400E),
+                    color: AppColors.statusPartialText,
                   ),
                 ),
               ),
@@ -211,25 +204,17 @@ class _ScenarioListScreenState extends State<ScenarioListScreen> {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
           decoration: BoxDecoration(
-            color: AppColors.surfaceRaised,
-            borderRadius: BorderRadius.circular(8),
+            color: AppColors.mint,
+            borderRadius: BorderRadius.circular(10),
             border: Border.all(color: AppColors.border),
           ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text(
-                'Pagu Dana Tersedia:',
-                style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
-              ),
-              Text(
-                CurrencyFormatter.format(widget.event.availableFunds),
-                style: AppTheme.moneyStyle.copyWith(
-                  fontSize: 14,
-                  color: AppColors.primary700,
-                ),
-              ),
-            ],
+          child: _buildResponsiveKeyValueRow(
+            label: 'Pagu Dana Tersedia:',
+            value: CurrencyFormatter.format(widget.event.availableFunds),
+            valueStyle: AppTheme.moneyStyle.copyWith(
+              fontSize: 14,
+              color: AppColors.forest,
+            ),
           ),
         ),
         const SizedBox(height: 16),
@@ -261,7 +246,7 @@ class _ScenarioListScreenState extends State<ScenarioListScreen> {
                         style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w700,
-                          color: AppColors.textPrimary,
+                          color: AppColors.forest,
                         ),
                       ),
                       if (sc.description != null && sc.description!.isNotEmpty) ...[
@@ -278,21 +263,21 @@ class _ScenarioListScreenState extends State<ScenarioListScreen> {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFFEF2F2),
+                      color: AppColors.statusRejectedBg,
                       borderRadius: BorderRadius.circular(6),
-                      border: Border.all(color: const Color(0xFFFECACA)),
+                      border: Border.all(color: AppColors.statusRejectedBorder),
                     ),
                     child: const Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.trending_down, size: 14, color: Color(0xFFDC2626)),
+                        Icon(Icons.trending_down, size: 14, color: AppColors.statusRejectedText),
                         SizedBox(width: 4),
                         Text(
                           'Defisit',
                           style: TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.w700,
-                            color: Color(0xFFDC2626),
+                            color: AppColors.statusRejectedText,
                           ),
                         ),
                       ],
@@ -302,88 +287,59 @@ class _ScenarioListScreenState extends State<ScenarioListScreen> {
             ),
             const SizedBox(height: 14),
 
-            // Metrik Skenario
+            // Metrik Skenario (jarak 8px antar baris sesuai skala spacing DESIGN.md)
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
                 color: AppColors.surfaceRaised,
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(10),
                 border: Border.all(color: AppColors.border),
               ),
               child: Column(
                 children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text(
-                        'Total Estimasi:',
-                        style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
-                      ),
-                      Text(
-                        CurrencyFormatter.format(sc.scenarioTotal),
-                        style: AppTheme.moneyStyle.copyWith(
-                          fontSize: 14,
-                          color: sc.isDeficit ? const Color(0xFFDC2626) : AppColors.textPrimary,
-                        ),
-                      ),
-                    ],
+                  _buildResponsiveKeyValueRow(
+                    label: 'Total Estimasi:',
+                    value: CurrencyFormatter.format(sc.scenarioTotal),
+                    valueStyle: AppTheme.moneyStyle.copyWith(
+                      fontSize: 14,
+                      color: sc.isDeficit ? AppColors.statusRejectedText : AppColors.forest,
+                    ),
                   ),
-                  const Divider(height: 14),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text(
-                        'Selisih Pagu:',
-                        style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
-                      ),
-                      Text(
-                        '${sc.fundGap >= 0 ? "+" : ""}${CurrencyFormatter.format(sc.fundGap)}',
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                          color: sc.fundGap < 0 ? const Color(0xFFDC2626) : const Color(0xFF16A34A),
-                        ),
-                      ),
-                    ],
+                  const SizedBox(height: 8),
+                  _buildResponsiveKeyValueRow(
+                    label: 'Selisih Pagu:',
+                    value: '${sc.fundGap >= 0 ? "+" : ""}${CurrencyFormatter.format(sc.fundGap)}',
+                    valueStyle: AppTheme.moneyStyle.copyWith(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: sc.fundGap < 0
+                          ? AppColors.statusRejectedText
+                          : AppColors.statusApprovedText,
+                    ),
                   ),
-                  const Divider(height: 14),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        'Biaya / Peserta (${sc.participantCount} org):',
-                        style: const TextStyle(fontSize: 13, color: AppColors.textSecondary),
-                      ),
-                      Text(
-                        sc.costPerParticipant != null
-                            ? CurrencyFormatter.format(sc.costPerParticipant!)
-                            : '-',
-                        style: const TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.textPrimary,
-                        ),
-                      ),
-                    ],
+                  const SizedBox(height: 8),
+                  _buildResponsiveKeyValueRow(
+                    label: 'Biaya / Peserta (${sc.participantCount} org):',
+                    value: sc.costPerParticipant != null
+                        ? CurrencyFormatter.format(sc.costPerParticipant!)
+                        : '-',
+                    valueStyle: AppTheme.moneyStyle.copyWith(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.forest,
+                    ),
                   ),
                   if (sc.unfundedItemsCount > 0) ...[
-                    const Divider(height: 14),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text(
-                          'Kebutuhan Wajib Belum Terdanai:',
-                          style: TextStyle(fontSize: 12, color: Color(0xFFB45309)),
-                        ),
-                        Text(
-                          '${sc.unfundedItemsCount} item',
-                          style: const TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w700,
-                            color: Color(0xFFB45309),
-                          ),
-                        ),
-                      ],
+                    const SizedBox(height: 8),
+                    _buildResponsiveKeyValueRow(
+                      label: 'Kebutuhan Wajib Belum Terdanai:',
+                      labelStyle: const TextStyle(fontSize: 12, color: AppColors.statusPartialText),
+                      value: '${sc.unfundedItemsCount} item',
+                      valueStyle: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.statusPartialText,
+                      ),
                     ),
                   ],
                 ],
@@ -404,30 +360,20 @@ class _ScenarioListScreenState extends State<ScenarioListScreen> {
               const SizedBox(height: 6),
               ...sc.items.take(3).map((it) => Padding(
                     padding: const EdgeInsets.symmetric(vertical: 2.0),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Expanded(
-                          child: Text(
-                            '• ${it.name} (${it.quantity.toStringAsFixed(it.quantity.truncateToDouble() == it.quantity ? 0 : 1)}x)',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: it.isIncluded ? AppColors.textPrimary : AppColors.textSecondary,
-                              decoration: it.isIncluded ? null : TextDecoration.lineThrough,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        Text(
-                          CurrencyFormatter.format(it.itemTotal),
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500,
-                            color: it.isIncluded ? AppColors.textPrimary : AppColors.textSecondary,
-                          ),
-                        ),
-                      ],
+                    child: _buildResponsiveKeyValueRow(
+                      label:
+                          '› ${it.name} (${it.quantity.toStringAsFixed(it.quantity.truncateToDouble() == it.quantity ? 0 : 1)}x)',
+                      labelStyle: TextStyle(
+                        fontSize: 12,
+                        color: it.isIncluded ? AppColors.forest : AppColors.textSecondary,
+                        decoration: it.isIncluded ? null : TextDecoration.lineThrough,
+                      ),
+                      value: CurrencyFormatter.format(it.itemTotal),
+                      valueStyle: AppTheme.moneyStyle.copyWith(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                        color: it.isIncluded ? AppColors.forest : AppColors.textSecondary,
+                      ),
                     ),
                   )),
               if (sc.items.length > 3)
@@ -435,58 +381,126 @@ class _ScenarioListScreenState extends State<ScenarioListScreen> {
                   padding: const EdgeInsets.only(top: 4.0),
                   child: Text(
                     '+ ${sc.items.length - 3} item lainnya...',
-                    style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
+                    style: const TextStyle(fontSize: 11, color: AppColors.textMuted),
                   ),
                 ),
               const SizedBox(height: 14),
             ],
 
             // Tombol Aksi
-            Row(
-              children: [
-                Expanded(
-                  child: AppButton(
-                    label: 'Tambah Item',
-                    icon: Icons.add,
-                    isOutlined: true,
-                    onPressed: () async {
-                      final res = await Navigator.of(context).push<bool>(
-                        MaterialPageRoute(
-                          builder: (_) => ScenarioItemFormScreen(
-                            organization: widget.organization,
-                            event: widget.event,
-                            scenarioId: sc.id,
-                            scenarioName: sc.name,
-                          ),
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final highScale = MediaQuery.textScalerOf(context).scale(14) > 18;
+                final stackButtons = constraints.maxWidth < 260 || highScale;
+                final addBtn = AppButton.ghost(
+                  label: 'Tambah Item',
+                  icon: Icons.add,
+                  size: AppButtonSize.compact,
+                  fullWidth: stackButtons,
+                  onPressed: () async {
+                    final res = await Navigator.of(context).push<bool>(
+                      MaterialPageRoute(
+                        builder: (_) => ScenarioItemFormScreen(
+                          organization: widget.organization,
+                          event: widget.event,
+                          scenarioId: sc.id,
+                          scenarioName: sc.name,
                         ),
-                      );
-                      if (res == true) _fetchScenarios();
-                    },
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: AppButton(
-                    label: 'Ajukan ke Bendahara',
-                    icon: Icons.send_outlined,
-                    backgroundColor: AppColors.primary700,
-                    onPressed: sc.isDeficit
-                        ? () {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Skenario defisit tidak dapat diajukan. Kurangi estimasi anggaran terlebih dahulu.'),
-                                backgroundColor: Color(0xFFDC2626),
+                      ),
+                    );
+                    if (res == true) _fetchScenarios();
+                  },
+                );
+                final submitBtn = AppButton(
+                  label: 'Ajukan ke Bendahara',
+                  icon: Icons.send_outlined,
+                  size: AppButtonSize.compact,
+                  backgroundColor: AppColors.forest,
+                  fullWidth: stackButtons,
+                  onPressed: sc.isDeficit
+                      ? () {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text(
+                                'Skenario defisit tidak dapat diajukan. Kurangi estimasi anggaran terlebih dahulu.',
                               ),
-                            );
-                          }
-                        : () => _confirmSubmit(sc),
-                  ),
-                ),
-              ],
+                              backgroundColor: AppColors.statusRejectedText,
+                            ),
+                          );
+                        }
+                      : () => _confirmSubmit(sc),
+                );
+
+                if (stackButtons) {
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      addBtn,
+                      const SizedBox(height: 8),
+                      submitBtn,
+                    ],
+                  );
+                }
+
+                return Row(
+                  children: [
+                    Expanded(child: addBtn),
+                    const SizedBox(width: 8),
+                    Expanded(child: submitBtn),
+                  ],
+                );
+              },
             ),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildResponsiveKeyValueRow({
+    required String label,
+    required String value,
+    TextStyle? labelStyle,
+    required TextStyle valueStyle,
+  }) {
+    final effectiveLabelStyle =
+        labelStyle ?? const TextStyle(fontSize: 13, color: AppColors.textSecondary);
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final highScale = MediaQuery.textScalerOf(context).scale(14) > 18;
+        if (highScale || constraints.maxWidth < 250) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(label, style: effectiveLabelStyle),
+              const SizedBox(height: 2),
+              Text(value, style: valueStyle),
+            ],
+          );
+        }
+        return Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Expanded(
+              child: Text(
+                label,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: effectiveLabelStyle,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Flexible(
+              child: Text(
+                value,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: valueStyle,
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 }
