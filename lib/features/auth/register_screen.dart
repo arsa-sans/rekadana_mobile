@@ -68,7 +68,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.surfaceMuted,
+      backgroundColor: AppColors.cloud,
       appBar: AppBar(
         title: const Text('Daftar Akun Baru'),
         backgroundColor: Colors.transparent,
@@ -79,36 +79,48 @@ class _RegisterScreenState extends State<RegisterScreen> {
           child: SingleChildScrollView(
             padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
             child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 400),
+              constraints: const BoxConstraints(maxWidth: 420),
               child: Form(
                 key: _formKey,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    const Icon(
-                      Icons.account_balance_wallet_outlined,
-                      size: 48,
-                      color: AppColors.primary700,
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: Container(
+                        height: 56,
+                        width: 56,
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          color: AppColors.mint,
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: AppColors.border, width: 1),
+                        ),
+                        child: const Icon(
+                          Icons.account_balance_wallet_outlined,
+                          size: 28,
+                          color: AppColors.forest,
+                        ),
+                      ),
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 18),
                     const Text(
                       'Buat Akun RekaDana',
-                      textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 22,
                         fontWeight: FontWeight.w700,
-                        color: AppColors.textPrimary,
-                        letterSpacing: -0.5,
+                        color: AppColors.forest,
+                        letterSpacing: -0.3,
                       ),
                     ),
                     const SizedBox(height: 6),
                     const Text(
-                      'Kelola anggaran kegiatan sekolah dengan rapi dan transparan',
-                      textAlign: TextAlign.center,
+                      'Kelola anggaran kegiatan sekolah dengan rapi dan transparan.',
                       style: TextStyle(
-                        fontSize: 14,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w400,
                         color: AppColors.textSecondary,
-                        height: 1.4,
+                        height: 1.45,
                       ),
                     ),
                     const SizedBox(height: 28),
@@ -118,7 +130,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
                           color: AppColors.statusRejectedBg,
-                          borderRadius: BorderRadius.circular(8),
+                          borderRadius: BorderRadius.circular(6),
                           border: Border.all(color: AppColors.statusRejectedBorder, width: 1),
                         ),
                         child: Row(
@@ -193,6 +205,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           size: 20,
                           color: AppColors.textSecondary,
                         ),
+                        tooltip: _obscurePassword ? 'Tampilkan kata sandi' : 'Sembunyikan kata sandi',
                         onPressed: () {
                           setState(() {
                             _obscurePassword = !_obscurePassword;
@@ -226,14 +239,20 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           'Sudah memiliki akun? ',
                           style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
                         ),
-                        GestureDetector(
-                          onTap: () => Navigator.of(context).pop(),
+                        TextButton(
+                          onPressed: () => Navigator.of(context).pop(),
+                          style: TextButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(horizontal: 6),
+                            minimumSize: const Size(44, 44),
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            foregroundColor: AppColors.forest,
+                          ),
                           child: const Text(
                             'Masuk',
                             style: TextStyle(
                               fontSize: 13,
                               fontWeight: FontWeight.w600,
-                              color: AppColors.primary700,
+                              color: AppColors.forest,
                             ),
                           ),
                         ),
