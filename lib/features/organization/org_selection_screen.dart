@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
+import '../../core/constants/app_theme.dart';
 import '../../core/storage/secure_storage_service.dart';
 import '../../core/widgets/confirmation_dialog.dart';
 import '../../core/widgets/state_views.dart';
@@ -10,7 +11,14 @@ import 'models/organization_model.dart';
 import 'org_service.dart';
 
 class OrgSelectionScreen extends StatefulWidget {
-  const OrgSelectionScreen({super.key});
+  final List<OrganizationModel>? initialOrganizations;
+  final String? initialUserName;
+
+  const OrgSelectionScreen({
+    super.key,
+    this.initialOrganizations,
+    this.initialUserName,
+  });
 
   @override
   State<OrgSelectionScreen> createState() => _OrgSelectionScreenState();
@@ -29,7 +37,13 @@ class _OrgSelectionScreenState extends State<OrgSelectionScreen> {
   @override
   void initState() {
     super.initState();
-    _loadInitialData();
+    if (widget.initialOrganizations != null) {
+      _organizations = widget.initialOrganizations;
+      _userName = widget.initialUserName ?? 'Pengguna';
+      _isLoading = false;
+    } else {
+      _loadInitialData();
+    }
   }
 
   Future<void> _loadInitialData() async {
@@ -93,10 +107,30 @@ class _OrgSelectionScreenState extends State<OrgSelectionScreen> {
     );
   }
 
+  String _userInitial(String name) {
+    final trimmed = name.trim();
+    if (trimmed.isEmpty) return 'P';
+    return trimmed[0].toUpperCase();
+  }
+
+  String _orgInitials(String name) {
+    final parts = name
+        .trim()
+        .split(RegExp(r'\s+'))
+        .where((p) => p.isNotEmpty)
+        .toList();
+    if (parts.isEmpty) return 'OR';
+    if (parts.length == 1) {
+      final word = parts.first.toUpperCase();
+      return word.length >= 2 ? word.substring(0, 2) : word;
+    }
+    return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.surfaceMuted,
+      backgroundColor: AppColors.cloud,
       appBar: AppBar(
         title: const Text('Pilih Organisasi'),
         actions: [
@@ -110,7 +144,7 @@ class _OrgSelectionScreenState extends State<OrgSelectionScreen> {
       body: SafeArea(
         child: RefreshIndicator(
           onRefresh: _fetchOrganizations,
-          color: AppColors.primary700,
+          color: AppColors.forest,
           child: _buildBody(),
         ),
       ),
@@ -137,49 +171,96 @@ class _OrgSelectionScreenState extends State<OrgSelectionScreen> {
       );
     }
 
+    final orgCount = _organizations!.length;
+    final displayName = _userName.trim().isEmpty ? 'Pengguna' : _userName.trim();
+
     return ListView(
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 16.0),
       children: [
-        // Salam sapaan pengguna
+        // Kartu sapaan memakai border seragam #D1E8DF tanpa left-border dekoratif (keputusan R-37).
         Container(
           padding: const EdgeInsets.all(16),
           margin: const EdgeInsets.only(bottom: 20),
           decoration: BoxDecoration(
             color: AppColors.surface,
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(10),
             border: Border.all(color: AppColors.border, width: 1),
           ),
-          child: Row(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                height: 44,
-                width: 44,
-                decoration: BoxDecoration(
-                  color: AppColors.primary50,
-                  shape: BoxShape.circle,
-                  border: Border.all(color: AppColors.primary200, width: 1),
-                ),
-                child: const Icon(Icons.person_outline, color: AppColors.primary700, size: 24),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Selamat datang, $_userName',
+              Row(
+                children: [
+                  Container(
+                    height: 44,
+                    width: 44,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: AppColors.mint,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: AppColors.border, width: 1),
+                    ),
+                    child: Text(
+                      _userInitial(displayName),
                       style: const TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.textPrimary,
+                        fontSize: 17,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.forest,
                       ),
                     ),
-                    const SizedBox(height: 2),
-                    const Text(
-                      'Pilih organisasi untuk mengelola anggaran kegiatan',
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: AppColors.textSecondary,
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Selamat datang, $displayName',
+                          style: const TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.forest,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        const Text(
+                          'Pilih organisasi untuk mengelola anggaran kegiatan',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 14),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                decoration: BoxDecoration(
+                  color: AppColors.mint,
+                  borderRadius: BorderRadius.circular(6),
+                  border: Border.all(color: AppColors.border, width: 1),
+                ),
+                child: Row(
+                  children: [
+                    Text(
+                      '$orgCount',
+                      style: AppTheme.moneyLargeStyle.copyWith(
+                        fontSize: 22,
+                        color: AppColors.forest,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    const Expanded(
+                      child: Text(
+                        'organisasi terdaftar',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.forest,
+                        ),
                       ),
                     ),
                   ],
@@ -189,15 +270,35 @@ class _OrgSelectionScreenState extends State<OrgSelectionScreen> {
           ),
         ),
 
-        const Padding(
-          padding: EdgeInsets.only(left: 4.0, bottom: 10.0),
-          child: Text(
-            'Daftar Organisasi Aktif',
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w700,
-              color: AppColors.textPrimary,
-            ),
+        Padding(
+          padding: const EdgeInsets.only(left: 4.0, bottom: 10.0),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Expanded(
+                child: Text(
+                  'Daftar Organisasi Aktif',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.forest,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Flexible(
+                child: Text(
+                  '$orgCount organisasi terdaftar',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
 
@@ -207,29 +308,29 @@ class _OrgSelectionScreenState extends State<OrgSelectionScreen> {
   }
 
   Widget _buildOrgCard(OrganizationModel org) {
-    Color badgeBg;
-    Color badgeText;
-    Color badgeBorder;
+    final Color badgeBg;
+    final Color badgeText;
+    final Color badgeBorder;
 
     if (org.isBendahara) {
       badgeBg = AppColors.statusApprovedBg;
       badgeText = AppColors.statusApprovedText;
       badgeBorder = AppColors.statusApprovedBorder;
     } else if (org.isKetua) {
-      badgeBg = AppColors.primary50;
-      badgeText = AppColors.primary700;
-      badgeBorder = AppColors.primary200;
+      badgeBg = AppColors.mint;
+      badgeText = AppColors.forest;
+      badgeBorder = AppColors.border;
     } else {
-      badgeBg = AppColors.statusDraftBg;
-      badgeText = AppColors.statusDraftText;
-      badgeBorder = AppColors.statusDraftBorder;
+      badgeBg = AppColors.surfaceRaised;
+      badgeText = AppColors.textSecondary;
+      badgeBorder = AppColors.border;
     }
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       child: InkWell(
         onTap: () => _selectOrganization(org),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(10),
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Row(
@@ -237,12 +338,20 @@ class _OrgSelectionScreenState extends State<OrgSelectionScreen> {
               Container(
                 height: 48,
                 width: 48,
+                alignment: Alignment.center,
                 decoration: BoxDecoration(
-                  color: AppColors.surfaceRaised,
+                  color: AppColors.forest,
                   borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: AppColors.border, width: 1),
                 ),
-                child: const Icon(Icons.apartment_outlined, color: AppColors.primary700, size: 26),
+                child: Text(
+                  _orgInitials(org.name),
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.onPrimary,
+                    letterSpacing: 0.4,
+                  ),
+                ),
               ),
               const SizedBox(width: 14),
               Expanded(
@@ -254,15 +363,15 @@ class _OrgSelectionScreenState extends State<OrgSelectionScreen> {
                       style: const TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w600,
-                        color: AppColors.textPrimary,
+                        color: AppColors.forest,
                       ),
                     ),
                     const SizedBox(height: 6),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                       decoration: BoxDecoration(
                         color: badgeBg,
-                        borderRadius: BorderRadius.circular(4),
+                        borderRadius: BorderRadius.circular(6),
                         border: Border.all(color: badgeBorder, width: 1),
                       ),
                       child: Text(
@@ -277,7 +386,7 @@ class _OrgSelectionScreenState extends State<OrgSelectionScreen> {
                   ],
                 ),
               ),
-              const Icon(Icons.chevron_right, color: AppColors.textMuted, size: 22),
+              const Icon(Icons.chevron_right, color: AppColors.textSecondary, size: 22),
             ],
           ),
         ),
