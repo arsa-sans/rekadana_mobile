@@ -6,6 +6,7 @@ import '../../core/utils/currency_formatter.dart';
 import '../../core/utils/date_formatter.dart';
 import '../../core/widgets/app_button.dart';
 import '../../core/widgets/confirmation_dialog.dart';
+import '../../core/widgets/rejection_reason_dialog.dart';
 import '../../core/widgets/state_views.dart';
 import '../../core/widgets/status_badge.dart';
 import 'budget_service.dart';
@@ -17,11 +18,13 @@ import 'models/organization_model.dart';
 class BudgetVersionListScreen extends StatefulWidget {
   final OrganizationModel organization;
   final EventModel event;
+  final List<BudgetVersionModel>? initialVersions;
 
   const BudgetVersionListScreen({
     super.key,
     required this.organization,
     required this.event,
+    this.initialVersions,
   });
 
   @override
@@ -40,7 +43,12 @@ class _BudgetVersionListScreenState extends State<BudgetVersionListScreen> {
   @override
   void initState() {
     super.initState();
-    _loadUserAndData();
+    if (widget.initialVersions != null) {
+      _versions = widget.initialVersions!;
+      _isLoading = false;
+    } else {
+      _loadUserAndData();
+    }
   }
 
   Future<void> _loadUserAndData() async {
@@ -92,7 +100,7 @@ class _BudgetVersionListScreenState extends State<BudgetVersionListScreen> {
       message:
           'Versi anggaran sebesar ${CurrencyFormatter.format(version.snapshotTotal)} akan diaktifkan sebagai acuan pengeluaran resmi kegiatan. Versi anggaran sebelumnya akan didemosi menjadi draf.',
       confirmLabel: 'Setujui Anggaran',
-      confirmColor: AppColors.primary900,
+      confirmColor: AppColors.statusApprovedText,
     );
 
     if (confirmed == true) {
@@ -163,7 +171,7 @@ class _BudgetVersionListScreenState extends State<BudgetVersionListScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.surfaceMuted,
+      backgroundColor: AppColors.cloud,
       appBar: AppBar(
         title: const Text('Riwayat Versi Anggaran'),
         bottom: PreferredSize(
@@ -187,7 +195,7 @@ class _BudgetVersionListScreenState extends State<BudgetVersionListScreen> {
       body: SafeArea(
         child: RefreshIndicator(
           onRefresh: _fetchVersions,
-          color: AppColors.primary700,
+          color: AppColors.forest,
           child: _buildBody(),
         ),
       ),
@@ -235,7 +243,7 @@ class _BudgetVersionListScreenState extends State<BudgetVersionListScreen> {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(10),
         side: BorderSide(
-          color: isApprovedActive ? AppColors.primary500 : AppColors.border,
+          color: isApprovedActive ? AppColors.growth : AppColors.border,
           width: isApprovedActive ? 1.5 : 1.0,
         ),
       ),
@@ -263,24 +271,24 @@ class _BudgetVersionListScreenState extends State<BudgetVersionListScreen> {
               // Banner Versi Resmi Aktif
               if (isApprovedActive) ...[
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                   margin: const EdgeInsets.only(bottom: 12),
                   decoration: BoxDecoration(
-                    color: AppColors.primary50,
+                    color: AppColors.mint,
                     borderRadius: BorderRadius.circular(6),
-                    border: Border.all(color: AppColors.primary200),
+                    border: Border.all(color: AppColors.growth),
                   ),
                   child: const Row(
                     children: [
-                      Icon(Icons.verified, size: 16, color: AppColors.primary700),
-                      SizedBox(width: 6),
+                      Icon(Icons.verified_outlined, size: 18, color: AppColors.forest),
+                      SizedBox(width: 8),
                       Expanded(
                         child: Text(
                           'Anggaran Resmi Aktif (Batas Komitmen Kegiatan)',
                           style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
-                            color: AppColors.primary700,
+                            color: AppColors.forest,
                           ),
                         ),
                       ),
@@ -290,15 +298,16 @@ class _BudgetVersionListScreenState extends State<BudgetVersionListScreen> {
               ],
 
               // Header: Nomor Versi & Status
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Row(
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  final highScale = MediaQuery.textScalerOf(context).scale(14) > 18;
+                  final versionTitle = Row(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
-                          color: isApprovedActive ? AppColors.primary900 : AppColors.surfaceMuted,
+                          color: isApprovedActive ? AppColors.forest : AppColors.surfaceRaised,
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: Text(
@@ -306,23 +315,46 @@ class _BudgetVersionListScreenState extends State<BudgetVersionListScreen> {
                           style: TextStyle(
                             fontWeight: FontWeight.w700,
                             fontSize: 13,
-                            color: isApprovedActive ? Colors.white : AppColors.textPrimary,
+                            color: isApprovedActive ? AppColors.onPrimary : AppColors.forest,
                           ),
                         ),
                       ),
                       const SizedBox(width: 8),
-                      Text(
-                        'Versi Anggaran #${version.versionNumber}',
-                        style: const TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.textPrimary,
+                      Flexible(
+                        child: Text(
+                          'Versi Anggaran #${version.versionNumber}',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.forest,
+                          ),
                         ),
                       ),
                     ],
-                  ),
-                  StatusBadge(status: version.status),
-                ],
+                  );
+
+                  if (highScale || constraints.maxWidth < 280) {
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        versionTitle,
+                        const SizedBox(height: 8),
+                        StatusBadge(status: version.status),
+                      ],
+                    );
+                  }
+
+                  return Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(child: versionTitle),
+                      const SizedBox(width: 8),
+                      StatusBadge(status: version.status),
+                    ],
+                  );
+                },
               ),
               const SizedBox(height: 12),
 
@@ -330,7 +362,7 @@ class _BudgetVersionListScreenState extends State<BudgetVersionListScreen> {
               if (version.submittedAt != null) ...[
                 Row(
                   children: [
-                    const Icon(Icons.schedule, size: 13, color: AppColors.textMuted),
+                    const Icon(Icons.schedule, size: 14, color: AppColors.textMuted),
                     const SizedBox(width: 4),
                     Expanded(
                       child: Text(
@@ -347,7 +379,7 @@ class _BudgetVersionListScreenState extends State<BudgetVersionListScreen> {
               if (version.reviewedAt != null) ...[
                 Row(
                   children: [
-                    const Icon(Icons.person_outline, size: 13, color: AppColors.textMuted),
+                    const Icon(Icons.person_outline, size: 14, color: AppColors.textMuted),
                     const SizedBox(width: 4),
                     Expanded(
                       child: Text(
@@ -360,70 +392,110 @@ class _BudgetVersionListScreenState extends State<BudgetVersionListScreen> {
                 const SizedBox(height: 8),
               ],
 
-              // Snapshot Finansial Box
+              // Kotak snapshot memakai latar putih agar label 11px #64748B lolos kontras WCAG AA (4.76:1).
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: AppColors.surfaceRaised,
-                  borderRadius: BorderRadius.circular(8),
+                  color: AppColors.surface,
+                  borderRadius: BorderRadius.circular(10),
                   border: Border.all(color: AppColors.border),
                 ),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'Total Snapshot',
-                            style: TextStyle(fontSize: 11, color: AppColors.textSecondary),
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    final highScale = MediaQuery.textScalerOf(context).scale(14) > 18;
+                    final totalCol = Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Total Snapshot',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(fontSize: 11, color: AppColors.textMuted),
+                        ),
+                        const SizedBox(height: 2),
+                        FittedBox(
+                          fit: BoxFit.scaleDown,
+                          alignment: Alignment.centerLeft,
+                          child: Text(
                             CurrencyFormatter.format(version.snapshotTotal),
                             style: AppTheme.moneyStyle.copyWith(
-                              color: AppColors.primary900,
+                              color: AppColors.forest,
                               fontSize: 15,
                               fontWeight: FontWeight.w700,
                             ),
                           ),
-                        ],
-                      ),
-                    ),
-                    Container(width: 1, height: 32, color: AppColors.border),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'Pagu Saat Diajukan',
-                            style: TextStyle(fontSize: 11, color: AppColors.textSecondary),
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
+                        ),
+                      ],
+                    );
+                    final paguCol = Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Pagu Saat Diajukan',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(fontSize: 11, color: AppColors.textMuted),
+                        ),
+                        const SizedBox(height: 2),
+                        FittedBox(
+                          fit: BoxFit.scaleDown,
+                          alignment: Alignment.centerLeft,
+                          child: Text(
                             CurrencyFormatter.format(version.snapshotAvailableFunds),
-                            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
+                            style: AppTheme.moneyStyle.copyWith(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.forest,
+                            ),
                           ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
+                        ),
+                      ],
+                    );
+                    final pesertaCol = Column(
+                      crossAxisAlignment: highScale || constraints.maxWidth < 260
+                          ? CrossAxisAlignment.start
+                          : CrossAxisAlignment.end,
                       children: [
                         const Text(
                           'Peserta',
-                          style: TextStyle(fontSize: 11, color: AppColors.textSecondary),
+                          style: TextStyle(fontSize: 11, color: AppColors.textMuted),
                         ),
                         const SizedBox(height: 2),
                         Text(
                           '${version.snapshotParticipantCount} org',
-                          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
+                          style: const TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.forest,
+                          ),
                         ),
                       ],
-                    ),
-                  ],
+                    );
+
+                    if (highScale || constraints.maxWidth < 260) {
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          totalCol,
+                          const Divider(height: 16),
+                          paguCol,
+                          const Divider(height: 16),
+                          pesertaCol,
+                        ],
+                      );
+                    }
+
+                    return Row(
+                      children: [
+                        Expanded(child: totalCol),
+                        Container(width: 1, height: 32, color: AppColors.border),
+                        const SizedBox(width: 12),
+                        Expanded(child: paguCol),
+                        const SizedBox(width: 8),
+                        pesertaCol,
+                      ],
+                    );
+                  },
                 ),
               ),
 
@@ -431,6 +503,7 @@ class _BudgetVersionListScreenState extends State<BudgetVersionListScreen> {
               if (version.isRejected && version.rejectionReason != null) ...[
                 const SizedBox(height: 10),
                 Container(
+                  width: double.infinity,
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
                     color: AppColors.statusRejectedBg,
@@ -474,7 +547,7 @@ class _BudgetVersionListScreenState extends State<BudgetVersionListScreen> {
                   ),
                   child: const Row(
                     children: [
-                      Icon(Icons.info_outline, size: 15, color: AppColors.statusPartialText),
+                      Icon(Icons.lock_outlined, size: 15, color: AppColors.statusPartialText),
                       SizedBox(width: 6),
                       Expanded(
                         child: Text(
@@ -489,46 +562,69 @@ class _BudgetVersionListScreenState extends State<BudgetVersionListScreen> {
 
               const SizedBox(height: 14),
 
-              // Footer: Tombol Aksi Bendahara atau Link Detail
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              const Row(
                 children: [
-                  const Row(
-                    children: [
-                      Text(
-                        'Rincian item & perbandingan',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.primary700,
-                        ),
+                  Flexible(
+                    child: Text(
+                      'Rincian item & perbandingan',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.forest,
                       ),
-                      SizedBox(width: 2),
-                      Icon(Icons.chevron_right, size: 16, color: AppColors.primary700),
-                    ],
-                  ),
-
-                  // Aksi Approve/Reject hanya untuk Bendahara pada versi submitted
-                  if (isBendahara && version.isSubmitted) ...[
-                    Row(
-                      children: [
-                        AppButton(
-                          label: 'Tolak',
-                          isOutlined: true,
-                          foregroundColor: AppColors.statusRejectedText,
-                          onPressed: isSelfSubmission ? null : () => _handleReject(version),
-                        ),
-                        const SizedBox(width: 8),
-                        AppButton(
-                          label: 'Setujui',
-                          backgroundColor: AppColors.primary900,
-                          onPressed: isSelfSubmission ? null : () => _handleApprove(version),
-                        ),
-                      ],
                     ),
-                  ],
+                  ),
+                  SizedBox(width: 2),
+                  Icon(Icons.chevron_right, size: 16, color: AppColors.forest),
                 ],
               ),
+
+              if (isBendahara && version.isSubmitted) ...[
+                const SizedBox(height: 12),
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    final highScale = MediaQuery.textScalerOf(context).scale(14) > 18;
+                    final stackButtons = constraints.maxWidth < 260 || highScale;
+                    final rejectBtn = AppButton.ghost(
+                      label: 'Tolak',
+                      size: AppButtonSize.compact,
+                      fullWidth: stackButtons,
+                      foregroundColor: AppColors.statusRejectedText,
+                      borderColor: AppColors.statusRejectedText,
+                      onPressed: isSelfSubmission ? null : () => _handleReject(version),
+                    );
+                    final approveBtn = AppButton(
+                      label: 'Setujui',
+                      size: AppButtonSize.compact,
+                      fullWidth: stackButtons,
+                      backgroundColor: AppColors.statusApprovedText,
+                      foregroundColor: AppColors.onPrimary,
+                      onPressed: isSelfSubmission ? null : () => _handleApprove(version),
+                    );
+
+                    if (stackButtons) {
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          rejectBtn,
+                          const SizedBox(height: 8),
+                          approveBtn,
+                        ],
+                      );
+                    }
+
+                    return Row(
+                      children: [
+                        Expanded(child: rejectBtn),
+                        const SizedBox(width: 8),
+                        Expanded(child: approveBtn),
+                      ],
+                    );
+                  },
+                ),
+              ],
             ],
           ),
         ),
