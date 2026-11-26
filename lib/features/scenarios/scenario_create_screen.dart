@@ -58,7 +58,7 @@ class _ScenarioCreateScreenState extends State<ScenarioCreateScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Skenario berhasil dibuat. Tambahkan kebutuhan barang atau jasa.'),
-          backgroundColor: AppColors.statusApprovedBg,
+          backgroundColor: AppColors.statusApprovedText,
         ),
       );
 
@@ -88,95 +88,142 @@ class _ScenarioCreateScreenState extends State<ScenarioCreateScreen> {
     }
   }
 
+  bool get _isFormDirty =>
+      _nameController.text.isNotEmpty ||
+      _descriptionController.text.isNotEmpty ||
+      _participantCountController.text.isNotEmpty;
+
+  Future<bool> _confirmDiscard() async {
+    if (!_isFormDirty) return true;
+    final shouldLeave = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        backgroundColor: AppColors.surface,
+        title: const Text(
+          'Batalkan pengisian?',
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.forest),
+        ),
+        content: const Text(
+          'Data yang sudah diisi belum disimpan dan akan hilang jika keluar.',
+          style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Lanjutkan Isi', style: TextStyle(color: AppColors.forest)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            style: TextButton.styleFrom(foregroundColor: AppColors.statusRejectedText),
+            child: const Text('Keluar'),
+          ),
+        ],
+      ),
+    );
+    return shouldLeave ?? false;
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.surfaceMuted,
-      appBar: AppBar(
-        title: const Text('Buat Skenario Baru'),
-      ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16.0),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Identitas Skenario',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.textPrimary,
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) async {
+        if (didPop) return;
+        final shouldLeave = await _confirmDiscard();
+        if (shouldLeave && context.mounted) {
+          Navigator.of(context).pop();
+        }
+      },
+      child: Scaffold(
+        backgroundColor: AppColors.surfaceMuted,
+        appBar: AppBar(
+          title: const Text('Buat Skenario Baru'),
+        ),
+        body: SafeArea(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(16.0),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Card(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Identitas Skenario',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.textPrimary,
+                            ),
                           ),
-                        ),
-                        const SizedBox(height: 4),
-                        const Text(
-                          'Buat skenario alternatif (misalnya: Hemat, Standar, Premium) untuk dibandingkan sebelum diajukan ke Bendahara.',
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: AppColors.textSecondary,
+                          const SizedBox(height: 4),
+                          const Text(
+                            'Buat skenario alternatif (misalnya: Hemat, Standar, Premium) untuk dibandingkan sebelum diajukan ke Bendahara.',
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: AppColors.textSecondary,
+                            ),
                           ),
-                        ),
-                        const SizedBox(height: 16),
+                          const SizedBox(height: 16),
 
-                        // Nama Skenario
-                        TextFormField(
-                          controller: _nameController,
-                          decoration: const InputDecoration(
-                            labelText: 'Nama Skenario *',
-                            hintText: 'Contoh: Skenario Hemat',
+                          // Nama Skenario
+                          TextFormField(
+                            controller: _nameController,
+                            decoration: const InputDecoration(
+                              labelText: 'Nama Skenario *',
+                              hintText: 'Contoh: Skenario Hemat',
+                            ),
+                            validator: (v) {
+                              if (v == null || v.trim().length < 2) {
+                                return 'Nama skenario minimal 2 karakter.';
+                              }
+                              return null;
+                            },
                           ),
-                          validator: (v) {
-                            if (v == null || v.trim().length < 2) {
-                              return 'Nama skenario minimal 2 karakter.';
-                            }
-                            return null;
-                          },
-                        ),
-                        const SizedBox(height: 16),
+                          const SizedBox(height: 16),
 
-                        // Deskripsi
-                        TextFormField(
-                          controller: _descriptionController,
-                          maxLines: 2,
-                          decoration: const InputDecoration(
-                            labelText: 'Deskripsi / Asumsi (Opsional)',
-                            hintText: 'Catatan singkat tentang dasar perencanaan skenario ini...',
+                          // Deskripsi
+                          TextFormField(
+                            controller: _descriptionController,
+                            maxLines: 2,
+                            decoration: const InputDecoration(
+                              labelText: 'Deskripsi / Asumsi (Opsional)',
+                              hintText: 'Catatan singkat tentang dasar perencanaan skenario ini...',
+                            ),
                           ),
-                        ),
-                        const SizedBox(height: 16),
+                          const SizedBox(height: 16),
 
-                        // Jumlah Peserta Override
-                        TextFormField(
-                          controller: _participantCountController,
-                          keyboardType: TextInputType.number,
-                          decoration: InputDecoration(
-                            labelText: 'Jumlah Peserta Khusus (Opsional)',
-                            hintText: 'Default kegiatan: ${widget.event.participantCount} peserta',
-                            helperText: 'Kosongkan jika menggunakan jumlah peserta kegiatan.',
+                          // Jumlah Peserta Override
+                          TextFormField(
+                            controller: _participantCountController,
+                            keyboardType: TextInputType.number,
+                            decoration: InputDecoration(
+                              labelText: 'Jumlah Peserta Khusus (Opsional)',
+                              hintText: 'Default kegiatan: ${widget.event.participantCount} peserta',
+                              helperText: 'Kosongkan jika menggunakan jumlah peserta kegiatan.',
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(height: 24),
+                  const SizedBox(height: 24),
 
-                AppButton(
-                  label: 'Simpan dan Tambah Item',
-                  icon: Icons.arrow_forward,
-                  isLoading: _isLoading,
-                  onPressed: _submitForm,
-                ),
-              ],
+                  // Panah arah menandai alur lanjut langsung ke form tambah item skenario (R-08).
+                  AppButton(
+                    label: 'Simpan dan Tambah Item',
+                    icon: Icons.arrow_forward,
+                    isLoading: _isLoading,
+                    onPressed: _submitForm,
+                  ),
+                ],
+              ),
             ),
           ),
         ),
