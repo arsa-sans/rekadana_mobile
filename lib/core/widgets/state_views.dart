@@ -21,7 +21,7 @@ class LoadingView extends StatelessWidget {
               width: 36,
               child: CircularProgressIndicator(
                 strokeWidth: 3,
-                valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary700),
+                valueColor: AlwaysStoppedAnimation<Color>(AppColors.forest),
               ),
             ),
             const SizedBox(height: 16),
@@ -60,54 +60,66 @@ class EmptyStateView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 32.0, vertical: 48.0),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: AppColors.primary50,
-                shape: BoxShape.circle,
-                border: Border.all(color: AppColors.primary200, width: 1),
-              ),
-              child: Icon(icon, size: 40, color: AppColors.primary700),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              minHeight: constraints.hasBoundedHeight ? constraints.maxHeight : 0,
             ),
-            const SizedBox(height: 16),
-            Text(
-              title,
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: AppColors.textPrimary,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              description,
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontSize: 13,
-                color: AppColors.textSecondary,
-                height: 1.4,
-              ),
-            ),
-            if (actionLabel != null && onAction != null) ...[
-              const SizedBox(height: 20),
-              ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 240),
-                child: AppButton(
-                  label: actionLabel!,
-                  onPressed: onAction,
+            child: Center(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 32.0, vertical: 48.0),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: AppColors.mint,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: AppColors.border, width: 1),
+                      ),
+                      child: Icon(icon, size: 40, color: AppColors.forest),
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      title,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.forest,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      description,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        color: AppColors.textSecondary,
+                        height: 1.4,
+                      ),
+                    ),
+                    if (actionLabel != null && onAction != null) ...[
+                      const SizedBox(height: 20),
+                      ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 240),
+                        child: AppButton(
+                          label: actionLabel!,
+                          onPressed: onAction,
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
               ),
-            ],
-          ],
-        ),
-      ),
+            ),
+          ),
+        );
+      },
     );
   }
 }
@@ -125,55 +137,71 @@ class ErrorStateView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 32.0, vertical: 48.0),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: AppColors.statusRejectedBg,
-                shape: BoxShape.circle,
-                border: Border.all(color: AppColors.statusRejectedBorder, width: 1),
-              ),
-              child: const Icon(Icons.error_outline, size: 40, color: AppColors.statusRejectedText),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              minHeight: constraints.hasBoundedHeight ? constraints.maxHeight : 0,
             ),
-            const SizedBox(height: 16),
-            const Text(
-              'Gagal Memuat Data',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: AppColors.textPrimary,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              message,
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontSize: 13,
-                color: AppColors.textSecondary,
-                height: 1.4,
-              ),
-            ),
-            if (onRetry != null) ...[
-              const SizedBox(height: 20),
-              ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 200),
-                child: AppButton(
-                  label: 'Coba Lagi',
-                  icon: Icons.refresh,
-                  onPressed: onRetry,
+            child: Center(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 32.0, vertical: 48.0),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: AppColors.statusRejectedBg,
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: AppColors.statusRejectedBorder, width: 1),
+                      ),
+                      child: const Icon(
+                        Icons.error_outline,
+                        size: 40,
+                        color: AppColors.statusRejectedText,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    const Text(
+                      'Gagal Memuat Data',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.forest,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      message,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        color: AppColors.textSecondary,
+                        height: 1.4,
+                      ),
+                    ),
+                    if (onRetry != null) ...[
+                      const SizedBox(height: 20),
+                      ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 200),
+                        child: AppButton(
+                          label: 'Coba Lagi',
+                          icon: Icons.refresh,
+                          onPressed: onRetry,
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
               ),
-            ],
-          ],
-        ),
-      ),
+            ),
+          ),
+        );
+      },
     );
   }
 }
