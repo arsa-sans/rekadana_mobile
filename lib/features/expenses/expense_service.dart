@@ -88,7 +88,14 @@ class ExpenseService {
     void Function(int, int)? onProgress,
   }) async {
     final file = File(filePath);
+    if (!await file.exists()) {
+      throw Exception('File bukti tidak ditemukan di perangkat.');
+    }
+
     final fileSize = await file.length();
+    if (fileSize <= 0) {
+      throw Exception('File bukti kosong (0 byte). Pilih file yang valid.');
+    }
 
     if (fileSize > kMaxEvidenceBytes) {
       throw Exception(
@@ -105,8 +112,12 @@ class ExpenseService {
       mediaType = MediaType('image', 'png');
     } else if (ext == '.pdf') {
       mediaType = MediaType('application', 'pdf');
-    } else {
+    } else if (ext == '.jpg' || ext == '.jpeg' || ext.isEmpty) {
       mediaType = MediaType('image', 'jpeg');
+    } else {
+      throw Exception(
+        'Format file "$ext" tidak didukung. Gunakan file PDF, JPEG, atau PNG.',
+      );
     }
 
     final formData = FormData.fromMap({
