@@ -65,55 +65,84 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  void _showServerConfigDialog() async {
+  Future<void> _showServerConfigDialog() async {
     final currentUrl = await _storage.getBaseUrl();
     final urlController = TextEditingController(text: currentUrl);
 
-    if (!mounted) return;
-    showDialog(
+    if (!mounted) {
+      urlController.dispose();
+      return;
+    }
+
+    await showDialog<void>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Pengaturan Alamat Server'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Gunakan 10.0.2.2 untuk Android Emulator, atau masukkan IP lokal PC jika menggunakan perangkat fisik.',
-              style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
+      builder: (ctx) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        backgroundColor: AppColors.surface,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 420),
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(20.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Pengaturan Alamat Server',
+                  style: TextStyle(
+                    fontSize: 17,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.forest,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'Gunakan 10.0.2.2 untuk Android Emulator, atau masukkan IP lokal PC jika menggunakan perangkat fisik.',
+                  style: TextStyle(fontSize: 13, color: AppColors.textSecondary, height: 1.4),
+                ),
+                const SizedBox(height: 14),
+                AppTextField(
+                  controller: urlController,
+                  label: 'Base URL Server',
+                  hint: 'http://10.0.2.2:3000',
+                ),
+                const SizedBox(height: 20),
+                Row(
+                  children: [
+                    Expanded(
+                      child: AppButton.ghost(
+                        label: 'Batal',
+                        onPressed: () => Navigator.of(ctx).pop(),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: AppButton(
+                        label: 'Simpan',
+                        onPressed: () async {
+                          final newUrl = urlController.text.trim();
+                          if (newUrl.isNotEmpty) {
+                            await _storage.setBaseUrl(newUrl);
+                          }
+                          if (ctx.mounted) Navigator.of(ctx).pop();
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ),
-            const SizedBox(height: 12),
-            AppTextField(
-              controller: urlController,
-              label: 'Base URL Server',
-              hint: 'http://10.0.2.2:3000',
-            ),
-          ],
+          ),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Batal'),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              final newUrl = urlController.text.trim();
-              if (newUrl.isNotEmpty) {
-                await _storage.setBaseUrl(newUrl);
-              }
-              if (ctx.mounted) Navigator.of(ctx).pop();
-            },
-            child: const Text('Simpan'),
-          ),
-        ],
       ),
     );
+    urlController.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.surface,
+      backgroundColor: AppColors.cloud,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -136,20 +165,23 @@ class _LoginScreenState extends State<LoginScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    // Identitas Produk RekaDana
-                    Container(
-                      height: 56,
-                      width: 56,
-                      alignment: Alignment.center,
-                      decoration: BoxDecoration(
-                        color: AppColors.primary50,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: AppColors.primary200, width: 1),
-                      ),
-                      child: const Icon(
-                        Icons.account_balance_wallet_outlined,
-                        size: 30,
-                        color: AppColors.primary700,
+                    // Identitas Produk RekaDana ([LOGO] placeholder hingga logo final terpasang)
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: Container(
+                        height: 56,
+                        width: 56,
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          color: AppColors.mint,
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: AppColors.border, width: 1),
+                        ),
+                        child: const Icon(
+                          Icons.account_balance_wallet_outlined,
+                          size: 28,
+                          color: AppColors.forest,
+                        ),
                       ),
                     ),
                     const SizedBox(height: 18),
@@ -158,7 +190,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       style: TextStyle(
                         fontSize: 22,
                         fontWeight: FontWeight.w700,
-                        color: AppColors.textPrimary,
+                        color: AppColors.forest,
                         letterSpacing: -0.3,
                       ),
                     ),
@@ -166,9 +198,10 @@ class _LoginScreenState extends State<LoginScreen> {
                     const Text(
                       'Kelola pengajuan operasional dan pengawasan anggaran kepanitiaan.',
                       style: TextStyle(
-                        fontSize: 14,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w400,
                         color: AppColors.textSecondary,
-                        height: 1.4,
+                        height: 1.45,
                       ),
                     ),
                     const SizedBox(height: 28),
@@ -179,7 +212,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
                           color: AppColors.statusRejectedBg,
-                          borderRadius: BorderRadius.circular(8),
+                          borderRadius: BorderRadius.circular(6),
                           border: Border.all(color: AppColors.statusRejectedBorder, width: 1),
                         ),
                         child: Row(
@@ -209,9 +242,9 @@ class _LoginScreenState extends State<LoginScreen> {
                       Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: AppColors.statusDraftBg,
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: AppColors.statusDraftBorder, width: 1),
+                          color: AppColors.mint,
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(color: AppColors.border, width: 1),
                         ),
                         child: Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -219,7 +252,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             const Icon(
                               Icons.info_outline,
                               size: 18,
-                              color: AppColors.statusDraftText,
+                              color: AppColors.forest,
                             ),
                             const SizedBox(width: 8),
                             Expanded(
@@ -227,7 +260,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 widget.sessionExpiredMessage!,
                                 style: const TextStyle(
                                   fontSize: 13,
-                                  color: AppColors.statusDraftText,
+                                  color: AppColors.forest,
                                   height: 1.3,
                                 ),
                               ),
@@ -268,6 +301,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           size: 20,
                           color: AppColors.textSecondary,
                         ),
+                        tooltip: _obscurePassword ? 'Tampilkan kata sandi' : 'Sembunyikan kata sandi',
                         onPressed: () {
                           setState(() {
                             _obscurePassword = !_obscurePassword;
@@ -298,18 +332,24 @@ class _LoginScreenState extends State<LoginScreen> {
                           'Belum memiliki akun? ',
                           style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
                         ),
-                        GestureDetector(
-                          onTap: () {
+                        TextButton(
+                          onPressed: () {
                             Navigator.of(context).push(
                               MaterialPageRoute(builder: (_) => const RegisterScreen()),
                             );
                           },
+                          style: TextButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(horizontal: 6),
+                            minimumSize: const Size(44, 44),
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            foregroundColor: AppColors.forest,
+                          ),
                           child: const Text(
                             'Daftar akun baru',
                             style: TextStyle(
                               fontSize: 13,
                               fontWeight: FontWeight.w600,
-                              color: AppColors.primary700,
+                              color: AppColors.forest,
                             ),
                           ),
                         ),
