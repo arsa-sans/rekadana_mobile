@@ -6,6 +6,7 @@ import '../../core/utils/currency_formatter.dart';
 import '../../core/utils/date_formatter.dart';
 import '../../core/widgets/app_button.dart';
 import '../../core/widgets/confirmation_dialog.dart';
+import '../../core/widgets/rejection_reason_dialog.dart';
 import '../../core/widgets/state_views.dart';
 import '../../core/widgets/status_badge.dart';
 import 'budget_service.dart';
@@ -17,12 +18,14 @@ class BudgetVersionDetailScreen extends StatefulWidget {
   final OrganizationModel organization;
   final EventModel event;
   final String versionId;
+  final BudgetVersionDetailModel? initialDetail;
 
   const BudgetVersionDetailScreen({
     super.key,
     required this.organization,
     required this.event,
     required this.versionId,
+    this.initialDetail,
   });
 
   @override
@@ -42,7 +45,12 @@ class _BudgetVersionDetailScreenState extends State<BudgetVersionDetailScreen> {
   @override
   void initState() {
     super.initState();
-    _loadUserAndData();
+    if (widget.initialDetail != null) {
+      _detail = widget.initialDetail;
+      _isLoading = false;
+    } else {
+      _loadUserAndData();
+    }
   }
 
   Future<void> _loadUserAndData() async {
@@ -97,7 +105,7 @@ class _BudgetVersionDetailScreenState extends State<BudgetVersionDetailScreen> {
       message:
           'Versi anggaran sebesar ${CurrencyFormatter.format(version.snapshotTotal)} akan diaktifkan sebagai anggaran resmi kegiatan. Tindakan ini tercatat dalam audit log.',
       confirmLabel: 'Setujui Anggaran',
-      confirmColor: AppColors.primary900,
+      confirmColor: AppColors.statusApprovedText,
     );
 
     if (confirmed == true) {
@@ -180,18 +188,19 @@ class _BudgetVersionDetailScreenState extends State<BudgetVersionDetailScreen> {
         }
       },
       child: Scaffold(
-        backgroundColor: AppColors.surfaceMuted,
+        backgroundColor: AppColors.cloud,
         appBar: AppBar(
           title: Text(_detail != null ? 'Versi #${_detail!.version.versionNumber}' : 'Detail Versi Anggaran'),
           leading: IconButton(
             icon: const Icon(Icons.arrow_back),
+            tooltip: 'Kembali',
             onPressed: () => Navigator.of(context).pop(_hasMutated),
           ),
         ),
         body: SafeArea(
           child: RefreshIndicator(
             onRefresh: _fetchDetail,
-            color: AppColors.primary700,
+            color: AppColors.forest,
             child: _buildBody(),
           ),
         ),
@@ -236,13 +245,13 @@ class _BudgetVersionDetailScreenState extends State<BudgetVersionDetailScreen> {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: AppColors.primary50,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: AppColors.primary200),
+                color: AppColors.mint,
+                borderRadius: BorderRadius.circular(6),
+                border: Border.all(color: AppColors.growth),
               ),
               child: const Row(
                 children: [
-                  Icon(Icons.verified, size: 20, color: AppColors.primary700),
+                  Icon(Icons.verified_outlined, size: 20, color: AppColors.forest),
                   SizedBox(width: 8),
                   Expanded(
                     child: Text(
@@ -250,7 +259,7 @@ class _BudgetVersionDetailScreenState extends State<BudgetVersionDetailScreen> {
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
-                        color: AppColors.primary700,
+                        color: AppColors.forest,
                       ),
                     ),
                   ),
@@ -268,26 +277,43 @@ class _BudgetVersionDetailScreenState extends State<BudgetVersionDetailScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
+                  LayoutBuilder(
+                    builder: (context, constraints) {
+                      final highScale = MediaQuery.textScalerOf(context).scale(14) > 18;
+                      final titleWidget = Text(
                         'Versi Anggaran #${version.versionNumber}',
                         style: const TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.w700,
-                          color: AppColors.textPrimary,
+                          color: AppColors.forest,
                         ),
-                      ),
-                      StatusBadge(status: version.status),
-                    ],
+                      );
+                      if (highScale || constraints.maxWidth < 280) {
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            titleWidget,
+                            const SizedBox(height: 8),
+                            StatusBadge(status: version.status),
+                          ],
+                        );
+                      }
+                      return Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Flexible(child: titleWidget),
+                          const SizedBox(width: 8),
+                          StatusBadge(status: version.status),
+                        ],
+                      );
+                    },
                   ),
                   const SizedBox(height: 8),
 
                   if (version.submittedAt != null) ...[
                     Row(
                       children: [
-                        const Icon(Icons.schedule, size: 13, color: AppColors.textMuted),
+                        const Icon(Icons.schedule, size: 14, color: AppColors.textMuted),
                         const SizedBox(width: 4),
                         Expanded(
                           child: Text(
@@ -303,7 +329,7 @@ class _BudgetVersionDetailScreenState extends State<BudgetVersionDetailScreen> {
                   if (version.reviewedAt != null) ...[
                     Row(
                       children: [
-                        const Icon(Icons.person_outline, size: 13, color: AppColors.textMuted),
+                        const Icon(Icons.person_outline, size: 14, color: AppColors.textMuted),
                         const SizedBox(width: 4),
                         Expanded(
                           child: Text(
@@ -329,7 +355,7 @@ class _BudgetVersionDetailScreenState extends State<BudgetVersionDetailScreen> {
                         ),
                         child: const Row(
                           children: [
-                            Icon(Icons.info_outline, size: 15, color: AppColors.statusPartialText),
+                            Icon(Icons.lock_outlined, size: 15, color: AppColors.statusPartialText),
                             SizedBox(width: 6),
                             Expanded(
                               child: Text(
@@ -341,25 +367,44 @@ class _BudgetVersionDetailScreenState extends State<BudgetVersionDetailScreen> {
                         ),
                       ),
                     ],
-                    Row(
-                      children: [
-                        Expanded(
-                          child: AppButton(
-                            label: 'Tolak Anggaran',
-                            isOutlined: true,
-                            foregroundColor: AppColors.statusRejectedText,
-                            onPressed: isSelfSubmission ? null : _handleReject,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: AppButton(
-                            label: 'Setujui Anggaran',
-                            backgroundColor: AppColors.primary900,
-                            onPressed: isSelfSubmission ? null : _handleApprove,
-                          ),
-                        ),
-                      ],
+                    LayoutBuilder(
+                      builder: (context, constraints) {
+                        final highScale = MediaQuery.textScalerOf(context).scale(14) > 18;
+                        final stackButtons = constraints.maxWidth < 260 || highScale;
+                        final rejectBtn = AppButton.ghost(
+                          label: 'Tolak Anggaran',
+                          size: AppButtonSize.compact,
+                          fullWidth: stackButtons,
+                          foregroundColor: AppColors.statusRejectedText,
+                          borderColor: AppColors.statusRejectedText,
+                          onPressed: isSelfSubmission ? null : _handleReject,
+                        );
+                        final approveBtn = AppButton(
+                          label: 'Setujui Anggaran',
+                          size: AppButtonSize.compact,
+                          fullWidth: stackButtons,
+                          backgroundColor: AppColors.statusApprovedText,
+                          foregroundColor: AppColors.onPrimary,
+                          onPressed: isSelfSubmission ? null : _handleApprove,
+                        );
+                        if (stackButtons) {
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              rejectBtn,
+                              const SizedBox(height: 8),
+                              approveBtn,
+                            ],
+                          );
+                        }
+                        return Row(
+                          children: [
+                            Expanded(child: rejectBtn),
+                            const SizedBox(width: 12),
+                            Expanded(child: approveBtn),
+                          ],
+                        );
+                      },
                     ),
                   ],
                 ],
@@ -369,33 +414,63 @@ class _BudgetVersionDetailScreenState extends State<BudgetVersionDetailScreen> {
           const SizedBox(height: 16),
 
           // Metrik Finansial
-          Row(
-            children: [
-              Expanded(
-                child: _buildMetricCard(
-                  'Total Anggaran',
-                  CurrencyFormatter.format(version.snapshotTotal),
-                  AppColors.primary900,
-                  isBold: true,
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: _buildMetricCard(
-                  'Pagu Saat Diajukan',
-                  CurrencyFormatter.format(version.snapshotAvailableFunds),
-                  AppColors.textPrimary,
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: _buildMetricCard(
-                  'Peserta',
-                  '${version.snapshotParticipantCount} orang',
-                  AppColors.textPrimary,
-                ),
-              ),
-            ],
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final highScale = MediaQuery.textScalerOf(context).scale(14) > 18;
+              if (highScale || constraints.maxWidth < 280) {
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    _buildMetricCard(
+                      'Total Anggaran',
+                      CurrencyFormatter.format(version.snapshotTotal),
+                      AppColors.forest,
+                      isBold: true,
+                    ),
+                    const SizedBox(height: 8),
+                    _buildMetricCard(
+                      'Pagu Saat Diajukan',
+                      CurrencyFormatter.format(version.snapshotAvailableFunds),
+                      AppColors.forest,
+                    ),
+                    const SizedBox(height: 8),
+                    _buildMetricCard(
+                      'Peserta',
+                      '${version.snapshotParticipantCount} orang',
+                      AppColors.forest,
+                    ),
+                  ],
+                );
+              }
+              return Row(
+                children: [
+                  Expanded(
+                    child: _buildMetricCard(
+                      'Total Anggaran',
+                      CurrencyFormatter.format(version.snapshotTotal),
+                      AppColors.forest,
+                      isBold: true,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: _buildMetricCard(
+                      'Pagu Saat Diajukan',
+                      CurrencyFormatter.format(version.snapshotAvailableFunds),
+                      AppColors.forest,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: _buildMetricCard(
+                      'Peserta',
+                      '${version.snapshotParticipantCount} orang',
+                      AppColors.forest,
+                    ),
+                  ),
+                ],
+              );
+            },
           ),
           const SizedBox(height: 16),
 
@@ -448,22 +523,42 @@ class _BudgetVersionDetailScreenState extends State<BudgetVersionDetailScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
+                  LayoutBuilder(
+                    builder: (context, constraints) {
+                      final highScale = MediaQuery.textScalerOf(context).scale(14) > 18;
+                      final titleWidget = Text(
                         'Rincian Item (${items.length} item)',
                         style: const TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.w700,
-                          color: AppColors.textPrimary,
+                          color: AppColors.forest,
                         ),
-                      ),
-                      const Text(
+                      );
+                      const subtitleWidget = Text(
                         'Snapshot Terkunci',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                         style: TextStyle(fontSize: 11, color: AppColors.textMuted),
-                      ),
-                    ],
+                      );
+                      if (highScale || constraints.maxWidth < 260) {
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            titleWidget,
+                            const SizedBox(height: 2),
+                            subtitleWidget,
+                          ],
+                        );
+                      }
+                      return Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(child: titleWidget),
+                          const SizedBox(width: 8),
+                          const Flexible(child: subtitleWidget),
+                        ],
+                      );
+                    },
                   ),
                   const SizedBox(height: 12),
                   const Divider(height: 1),
@@ -488,41 +583,57 @@ class _BudgetVersionDetailScreenState extends State<BudgetVersionDetailScreen> {
                         final item = items[idx];
                         return Padding(
                           padding: const EdgeInsets.symmetric(vertical: 10.0),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      item.name,
-                                      style: const TextStyle(
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.w600,
-                                        color: AppColors.textPrimary,
-                                      ),
+                          child: LayoutBuilder(
+                            builder: (context, constraints) {
+                              final highScale = MediaQuery.textScalerOf(context).scale(14) > 18;
+                              final itemInfo = Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    item.name,
+                                    style: const TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                      color: AppColors.textPrimary,
                                     ),
-                                    const SizedBox(height: 2),
-                                    Text(
-                                      '${item.category != null ? '${item.category} • ' : ''}${item.quantity} × ${CurrencyFormatter.format(item.unitCost)}',
-                                      style: const TextStyle(
-                                        fontSize: 12,
-                                        color: AppColors.textSecondary,
-                                      ),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    '${item.category != null ? '${item.category} • ' : ''}${item.quantity} × ${CurrencyFormatter.format(item.unitCost)}',
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      color: AppColors.textSecondary,
                                     ),
-                                  ],
-                                ),
-                              ),
-                              Text(
+                                  ),
+                                ],
+                              );
+                              final totalText = Text(
                                 CurrencyFormatter.format(item.total),
                                 style: AppTheme.moneyStyle.copyWith(
-                                  color: AppColors.primary900,
+                                  color: AppColors.forest,
                                   fontSize: 14,
                                   fontWeight: FontWeight.w700,
                                 ),
-                              ),
-                            ],
+                              );
+                              if (highScale || constraints.maxWidth < 260) {
+                                return Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    itemInfo,
+                                    const SizedBox(height: 4),
+                                    totalText,
+                                  ],
+                                );
+                              }
+                              return Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Expanded(child: itemInfo),
+                                  const SizedBox(width: 8),
+                                  Flexible(child: totalText),
+                                ],
+                              );
+                            },
                           ),
                         );
                       },
@@ -532,25 +643,47 @@ class _BudgetVersionDetailScreenState extends State<BudgetVersionDetailScreen> {
                   const Divider(height: 1),
                   Padding(
                     padding: const EdgeInsets.only(top: 12.0),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text(
+                    child: LayoutBuilder(
+                      builder: (context, constraints) {
+                        final highScale = MediaQuery.textScalerOf(context).scale(14) > 18;
+                        const labelWidget = Text(
                           'Total Anggaran Snapshot:',
                           style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w700,
-                            color: AppColors.textPrimary,
+                            color: AppColors.forest,
                           ),
-                        ),
-                        Text(
-                          CurrencyFormatter.format(version.snapshotTotal),
-                          style: AppTheme.moneyLargeStyle.copyWith(
-                            color: AppColors.primary900,
-                            fontSize: 16,
+                        );
+                        final amountWidget = FittedBox(
+                          fit: BoxFit.scaleDown,
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            CurrencyFormatter.format(version.snapshotTotal),
+                            style: AppTheme.moneyLargeStyle.copyWith(
+                              color: AppColors.forest,
+                              fontSize: 16,
+                            ),
                           ),
-                        ),
-                      ],
+                        );
+                        if (highScale || constraints.maxWidth < 280) {
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              labelWidget,
+                              const SizedBox(height: 4),
+                              amountWidget,
+                            ],
+                          );
+                        }
+                        return Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Expanded(child: labelWidget),
+                            const SizedBox(width: 8),
+                            Flexible(child: amountWidget),
+                          ],
+                        );
+                      },
                     ),
                   ),
                 ],
@@ -567,7 +700,7 @@ class _BudgetVersionDetailScreenState extends State<BudgetVersionDetailScreen> {
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(10),
         border: Border.all(color: AppColors.border),
       ),
       child: Column(
@@ -577,17 +710,19 @@ class _BudgetVersionDetailScreenState extends State<BudgetVersionDetailScreen> {
             label,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
+            style: const TextStyle(fontSize: 11, color: AppColors.textMuted),
           ),
           const SizedBox(height: 4),
-          Text(
-            value,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: isBold ? FontWeight.w700 : FontWeight.w600,
-              color: valueColor,
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(
+              value,
+              style: AppTheme.moneyStyle.copyWith(
+                fontSize: 13,
+                fontWeight: isBold ? FontWeight.w700 : FontWeight.w600,
+                color: valueColor,
+              ),
             ),
           ),
         ],
@@ -605,77 +740,94 @@ class _BudgetVersionDetailScreenState extends State<BudgetVersionDetailScreen> {
           children: [
             Row(
               children: [
-                const Icon(Icons.compare_arrows, size: 18, color: AppColors.primary900),
+                const Icon(Icons.compare_arrows, size: 18, color: AppColors.forest),
                 const SizedBox(width: 8),
-                Text(
-                  'Perbandingan vs Versi #${comparison.previousVersionNumber}',
-                  style: const TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.primary900,
+                Expanded(
+                  child: Text(
+                    'Perbandingan vs Versi #${comparison.previousVersionNumber}',
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.forest,
+                    ),
                   ),
                 ),
               ],
             ),
             const SizedBox(height: 12),
 
-            // Summary metrik perubahan
+            // Summary metrik perubahan (latar putih agar label 11px #64748B lolos WCAG AA 4.76:1)
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: AppColors.surfaceRaised,
-                borderRadius: BorderRadius.circular(8),
+                color: AppColors.surface,
+                borderRadius: BorderRadius.circular(10),
                 border: Border.all(color: AppColors.border),
               ),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Column(
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final highScale = MediaQuery.textScalerOf(context).scale(14) > 18;
+                  final deltaCol = Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Selisih Total:',
+                        style: TextStyle(fontSize: 11, color: AppColors.textMuted),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        '${comparison.deltaTotal >= 0 ? '+' : ''}${CurrencyFormatter.format(comparison.deltaTotal)} (${comparison.deltaTotalPercentage >= 0 ? '+' : ''}${comparison.deltaTotalPercentage}%)',
+                        style: AppTheme.moneyStyle.copyWith(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: comparison.deltaTotal > 0
+                              ? AppColors.statusPartialText
+                              : comparison.deltaTotal < 0
+                              ? AppColors.statusApprovedText
+                              : AppColors.forest,
+                        ),
+                      ),
+                    ],
+                  );
+                  final itemChangesCol = Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Perubahan Item:',
+                        style: TextStyle(fontSize: 11, color: AppColors.textMuted),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        '+${comparison.addedItemsCount} baru, ${comparison.modifiedItemsCount} ubah',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.forest,
+                        ),
+                      ),
+                    ],
+                  );
+
+                  if (highScale || constraints.maxWidth < 260) {
+                    return Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
-                          'Selisih Total:',
-                          style: TextStyle(fontSize: 11, color: AppColors.textSecondary),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          '${comparison.deltaTotal >= 0 ? '+' : ''}${CurrencyFormatter.format(comparison.deltaTotal)} (${comparison.deltaTotalPercentage >= 0 ? '+' : ''}${comparison.deltaTotalPercentage}%)',
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w700,
-                            color: comparison.deltaTotal > 0
-                                ? AppColors.statusPartialText
-                                : comparison.deltaTotal < 0
-                                ? AppColors.statusApprovedText
-                                : AppColors.textPrimary,
-                          ),
-                        ),
+                        deltaCol,
+                        const Divider(height: 14),
+                        itemChangesCol,
                       ],
-                    ),
-                  ),
-                  Container(width: 1, height: 28, color: AppColors.border),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Perubahan Item:',
-                          style: TextStyle(fontSize: 11, color: AppColors.textSecondary),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          '+${comparison.addedItemsCount} baru, ${comparison.modifiedItemsCount} ubah',
-                          style: const TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.textPrimary,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
+                    );
+                  }
+
+                  return Row(
+                    children: [
+                      Expanded(child: deltaCol),
+                      Container(width: 1, height: 28, color: AppColors.border),
+                      const SizedBox(width: 10),
+                      Expanded(child: itemChangesCol),
+                    ],
+                  );
+                },
               ),
             ),
 
@@ -695,9 +847,10 @@ class _BudgetVersionDetailScreenState extends State<BudgetVersionDetailScreen> {
                   final diff = comparison.diffs[i];
                   return Padding(
                     padding: const EdgeInsets.symmetric(vertical: 6.0),
-                    child: Row(
-                      children: [
-                        Container(
+                    child: LayoutBuilder(
+                      builder: (context, constraints) {
+                        final highScale = MediaQuery.textScalerOf(context).scale(14) > 18;
+                        final badge = Container(
                           padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                           decoration: BoxDecoration(
                             color: diff.type == 'added'
@@ -723,15 +876,16 @@ class _BudgetVersionDetailScreenState extends State<BudgetVersionDetailScreen> {
                                   : AppColors.statusPartialText,
                             ),
                           ),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            diff.name,
-                            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: AppColors.textPrimary),
+                        );
+                        final diffName = Text(
+                          diff.name,
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                            color: AppColors.textPrimary,
                           ),
-                        ),
-                        Text(
+                        );
+                        final diffAmount = Text(
                           '${diff.totalDifference >= 0 ? '+' : ''}${CurrencyFormatter.format(diff.totalDifference)}',
                           style: TextStyle(
                             fontSize: 12,
@@ -742,8 +896,34 @@ class _BudgetVersionDetailScreenState extends State<BudgetVersionDetailScreen> {
                                 ? AppColors.statusApprovedText
                                 : AppColors.textPrimary,
                           ),
-                        ),
-                      ],
+                        );
+
+                        if (highScale || constraints.maxWidth < 260) {
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Wrap(
+                                spacing: 8,
+                                runSpacing: 4,
+                                crossAxisAlignment: WrapCrossAlignment.center,
+                                children: [badge, diffName],
+                              ),
+                              const SizedBox(height: 4),
+                              diffAmount,
+                            ],
+                          );
+                        }
+
+                        return Row(
+                          children: [
+                            badge,
+                            const SizedBox(width: 8),
+                            Expanded(child: diffName),
+                            const SizedBox(width: 8),
+                            Flexible(child: diffAmount),
+                          ],
+                        );
+                      },
                     ),
                   );
                 },
