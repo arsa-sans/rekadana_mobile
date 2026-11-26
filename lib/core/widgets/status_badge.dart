@@ -10,27 +10,31 @@ class StatusBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     final config = _getStatusConfig(status);
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: config.backgroundColor,
-        borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: config.borderColor, width: 1),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(config.icon, size: 14, color: config.textColor),
-          const SizedBox(width: 4),
-          Text(
-            config.label,
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: config.textColor,
+    return Semantics(
+      label: config.label,
+      excludeSemantics: true,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        decoration: BoxDecoration(
+          color: config.backgroundColor,
+          borderRadius: BorderRadius.circular(6),
+          border: Border.all(color: config.borderColor, width: 1),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(config.icon, size: 14, color: config.textColor),
+            const SizedBox(width: 4),
+            Text(
+              config.label,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: config.textColor,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -77,6 +81,14 @@ class StatusBadge extends StatelessWidget {
           textColor: AppColors.statusPartialText,
           backgroundColor: AppColors.statusPartialBg,
           borderColor: AppColors.statusPartialBorder,
+        );
+      case 'cancelled':
+        return _BadgeConfig(
+          label: 'Dibatalkan',
+          icon: Icons.block_outlined,
+          textColor: AppColors.statusCancelledText,
+          backgroundColor: AppColors.statusCancelledBg,
+          borderColor: AppColors.statusCancelledBorder,
         );
       case 'draft':
       default:
