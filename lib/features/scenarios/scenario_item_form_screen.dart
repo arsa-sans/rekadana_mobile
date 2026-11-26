@@ -92,7 +92,7 @@ class _ScenarioItemFormScreenState extends State<ScenarioItemFormScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Item kebutuhan berhasil ditambahkan.'),
-          backgroundColor: AppColors.statusApprovedBg,
+          backgroundColor: AppColors.statusApprovedText,
         ),
       );
 
@@ -112,7 +112,7 @@ class _ScenarioItemFormScreenState extends State<ScenarioItemFormScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.surfaceMuted,
+      backgroundColor: AppColors.cloud,
       appBar: AppBar(
         title: const Text('Tambah Item Kebutuhan'),
       ),
@@ -128,13 +128,13 @@ class _ScenarioItemFormScreenState extends State<ScenarioItemFormScreen> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                   decoration: BoxDecoration(
-                    color: AppColors.primary50,
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: AppColors.primary200),
+                    color: AppColors.mint,
+                    borderRadius: BorderRadius.circular(6),
+                    border: Border.all(color: AppColors.border),
                   ),
                   child: Row(
                     children: [
-                      const Icon(Icons.science_outlined, size: 18, color: AppColors.primary700),
+                      const Icon(Icons.science_outlined, size: 18, color: AppColors.forest),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
@@ -142,7 +142,7 @@ class _ScenarioItemFormScreenState extends State<ScenarioItemFormScreen> {
                           style: const TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.w600,
-                            color: AppColors.primary700,
+                            color: AppColors.forest,
                           ),
                         ),
                       ),
@@ -174,96 +174,128 @@ class _ScenarioItemFormScreenState extends State<ScenarioItemFormScreen> {
                         const SizedBox(height: 16),
 
                         // Kategori & Prioritas
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Expanded(
-                              child: TextFormField(
-                                controller: _categoryController,
-                                decoration: const InputDecoration(
-                                  labelText: 'Kategori (Opsional)',
-                                  hintText: 'Logistik, Konsumsi',
-                                ),
+                        LayoutBuilder(
+                          builder: (context, constraints) {
+                            final stackFields = constraints.maxWidth < 340 ||
+                                MediaQuery.textScalerOf(context).scale(14) > 18;
+                            final categoryField = TextFormField(
+                              controller: _categoryController,
+                              decoration: const InputDecoration(
+                                labelText: 'Kategori (Opsional)',
+                                hintText: 'Logistik, Konsumsi',
                               ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: DropdownButtonFormField<String>(
-                                initialValue: _priority,
-                                decoration: const InputDecoration(
-                                  labelText: 'Prioritas',
+                            );
+                            final priorityField = DropdownButtonFormField<String>(
+                              initialValue: _priority,
+                              isExpanded: true,
+                              decoration: const InputDecoration(
+                                labelText: 'Prioritas',
+                              ),
+                              items: const [
+                                DropdownMenuItem(
+                                  value: 'required',
+                                  child: Text('Wajib (Kritis)'),
                                 ),
-                                items: const [
-                                  DropdownMenuItem(
-                                    value: 'required',
-                                    child: Text('Wajib (Kritis)'),
-                                  ),
-                                  DropdownMenuItem(
-                                    value: 'normal',
-                                    child: Text('Normal'),
-                                  ),
-                                  DropdownMenuItem(
-                                    value: 'optional',
-                                    child: Text('Opsional'),
-                                  ),
+                                DropdownMenuItem(
+                                  value: 'normal',
+                                  child: Text('Normal'),
+                                ),
+                                DropdownMenuItem(
+                                  value: 'optional',
+                                  child: Text('Opsional'),
+                                ),
+                              ],
+                              onChanged: (val) {
+                                if (val != null) setState(() => _priority = val);
+                              },
+                            );
+
+                            if (stackFields) {
+                              return Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  categoryField,
+                                  const SizedBox(height: 16),
+                                  priorityField,
                                 ],
-                                onChanged: (val) {
-                                  if (val != null) setState(() => _priority = val);
-                                },
-                              ),
-                            ),
-                          ],
+                              );
+                            }
+
+                            return Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Expanded(child: categoryField),
+                                const SizedBox(width: 12),
+                                Expanded(child: priorityField),
+                              ],
+                            );
+                          },
                         ),
                         const SizedBox(height: 16),
 
                         // Kuantitas & Harga Satuan
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Expanded(
-                              child: TextFormField(
-                                controller: _quantityController,
-                                keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                                decoration: const InputDecoration(
-                                  labelText: 'Kuantitas *',
-                                  hintText: '1',
-                                ),
-                                validator: (v) {
-                                  if (v == null || v.trim().isEmpty) {
-                                    return 'Wajib diisi';
-                                  }
-                                  final q = double.tryParse(v.trim());
-                                  if (q == null || q <= 0) {
-                                    return 'Harus > 0';
-                                  }
-                                  return null;
-                                },
+                        LayoutBuilder(
+                          builder: (context, constraints) {
+                            final stackNumeric = constraints.maxWidth < 340 ||
+                                MediaQuery.textScalerOf(context).scale(14) > 18;
+                            final quantityField = TextFormField(
+                              controller: _quantityController,
+                              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                              decoration: const InputDecoration(
+                                labelText: 'Kuantitas *',
+                                hintText: '1',
                               ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              flex: 2,
-                              child: TextFormField(
-                                controller: _unitCostController,
-                                keyboardType: TextInputType.number,
-                                decoration: const InputDecoration(
-                                  labelText: 'Biaya Satuan (Rp) *',
-                                  prefixText: 'Rp ',
-                                  hintText: '50000',
-                                ),
-                                validator: (v) {
-                                  if (v == null || v.trim().isEmpty) {
-                                    return 'Wajib diisi';
-                                  }
-                                  final c = double.tryParse(v.trim().replaceAll('.', ''));
-                                  if (c == null || c < 0) {
-                                    return 'Tidak valid';
-                                  }
-                                  return null;
-                                },
+                              validator: (v) {
+                                if (v == null || v.trim().isEmpty) {
+                                  return 'Wajib diisi';
+                                }
+                                final q = double.tryParse(v.trim());
+                                if (q == null || q <= 0) {
+                                  return 'Harus > 0';
+                                }
+                                return null;
+                              },
+                            );
+                            final unitCostField = TextFormField(
+                              controller: _unitCostController,
+                              keyboardType: TextInputType.number,
+                              decoration: const InputDecoration(
+                                labelText: 'Biaya Satuan (Rp) *',
+                                prefixText: 'Rp ',
+                                hintText: '50000',
                               ),
-                            ),
-                          ],
+                              validator: (v) {
+                                if (v == null || v.trim().isEmpty) {
+                                  return 'Wajib diisi';
+                                }
+                                final c = double.tryParse(v.trim().replaceAll('.', ''));
+                                if (c == null || c < 0) {
+                                  return 'Tidak valid';
+                                }
+                                return null;
+                              },
+                            );
+
+                            if (stackNumeric) {
+                              return Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  quantityField,
+                                  const SizedBox(height: 16),
+                                  unitCostField,
+                                ],
+                              );
+                            }
+
+                            return Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Expanded(child: quantityField),
+                                const SizedBox(width: 12),
+                                Expanded(flex: 2, child: unitCostField),
+                              ],
+                            );
+                          },
                         ),
                         const SizedBox(height: 16),
 
@@ -278,13 +310,16 @@ class _ScenarioItemFormScreenState extends State<ScenarioItemFormScreen> {
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              const Text(
-                                'Estimasi Total Item:',
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  color: AppColors.textSecondary,
+                              const Expanded(
+                                child: Text(
+                                  'Estimasi Total Item:',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: AppColors.textSecondary,
+                                  ),
                                 ),
                               ),
+                              const SizedBox(width: 8),
                               Text(
                                 CurrencyFormatter.format(_itemTotalPreview),
                                 style: const TextStyle(
@@ -310,7 +345,7 @@ class _ScenarioItemFormScreenState extends State<ScenarioItemFormScreen> {
                             style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
                           ),
                           value: _isIncluded,
-                          activeThumbColor: AppColors.primary600,
+                          activeThumbColor: AppColors.forest,
                           onChanged: (v) => setState(() => _isIncluded = v),
                         ),
                         const SizedBox(height: 8),
