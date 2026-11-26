@@ -100,12 +100,12 @@ class _ExpenseListScreenState extends State<ExpenseListScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.surfaceMuted,
+      backgroundColor: AppColors.cloud,
       appBar: AppBar(
         title: const Text('Daftar Pengeluaran'),
         actions: [
           IconButton(
-            icon: const Icon(Icons.add, color: AppColors.primary700),
+            icon: const Icon(Icons.add, color: AppColors.forest),
             tooltip: 'Ajukan Pengeluaran',
             onPressed: _navigateToCreate,
           ),
@@ -144,7 +144,7 @@ class _ExpenseListScreenState extends State<ExpenseListScreen> {
             Expanded(
               child: RefreshIndicator(
                 onRefresh: _fetchExpenses,
-                color: AppColors.primary700,
+                color: AppColors.forest,
                 child: _buildBody(),
               ),
             ),
@@ -152,8 +152,8 @@ class _ExpenseListScreenState extends State<ExpenseListScreen> {
         ),
       ),
       floatingActionButton: FloatingActionButton.extended(
-        backgroundColor: AppColors.primary700,
-        foregroundColor: AppColors.textInverse,
+        backgroundColor: AppColors.forest,
+        foregroundColor: AppColors.onPrimary,
         icon: const Icon(Icons.add),
         label: const Text('Ajukan Kebutuhan'),
         onPressed: _navigateToCreate,
@@ -173,16 +173,19 @@ class _ExpenseListScreenState extends State<ExpenseListScreen> {
           });
         }
       },
-      selectedColor: AppColors.primary100,
+      selectedColor: AppColors.mint,
       backgroundColor: AppColors.surfaceRaised,
+      checkmarkColor: AppColors.forest,
+      materialTapTargetSize: MaterialTapTargetSize.padded,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
       labelStyle: TextStyle(
         fontSize: 13,
         fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-        color: isSelected ? AppColors.primary700 : AppColors.textSecondary,
+        color: isSelected ? AppColors.forest : AppColors.textSecondary,
       ),
       side: BorderSide(
-        color: isSelected ? AppColors.primary500 : AppColors.border,
-        width: 1,
+        color: isSelected ? AppColors.growth : AppColors.border,
+        width: isSelected ? 1.5 : 1,
       ),
     );
   }
@@ -197,40 +200,58 @@ class _ExpenseListScreenState extends State<ExpenseListScreen> {
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0),
-      color: AppColors.surface,
+      decoration: const BoxDecoration(
+        color: AppColors.surface,
+        border: Border(bottom: BorderSide(color: AppColors.border, width: 1)),
+      ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          _buildSummaryItem('Diajukan', submittedCount, AppColors.statusSubmittedText),
-          _buildSummaryItem('Disetujui', approvedCount, AppColors.statusApprovedText),
-          _buildSummaryItem('Dibayar', paidCount + partiallyPaidCount, AppColors.statusPaidText),
-          _buildSummaryItem('Ditolak', rejectedCount, AppColors.statusRejectedText),
+          Expanded(child: _buildSummaryItem('Diajukan', submittedCount, AppColors.statusSubmittedText)),
+          const SizedBox(width: 8),
+          Expanded(child: _buildSummaryItem('Disetujui', approvedCount, AppColors.statusApprovedText)),
+          const SizedBox(width: 8),
+          Expanded(child: _buildSummaryItem('Dibayar', paidCount + partiallyPaidCount, AppColors.statusPaidText)),
+          const SizedBox(width: 8),
+          Expanded(child: _buildSummaryItem('Ditolak', rejectedCount, AppColors.statusRejectedText)),
         ],
       ),
     );
   }
 
   Widget _buildSummaryItem(String label, int count, Color color) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Text(
-          count.toString(),
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w700,
-            color: color,
-          ),
+    // ClipRRect membulatkan sudut tanpa memicu asersi border non-seragam pada BoxDecoration.
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(6),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+        decoration: BoxDecoration(
+          color: AppColors.cloud,
+          border: Border(top: BorderSide(color: color, width: 2)),
         ),
-        const SizedBox(height: 2),
-        Text(
-          label,
-          style: const TextStyle(
-            fontSize: 11,
-            color: AppColors.textSecondary,
-          ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              count.toString(),
+              style: AppTheme.moneyStyle.copyWith(
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+                color: color,
+              ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                fontSize: 11,
+                color: AppColors.textSecondary,
+              ),
+            ),
+          ],
         ),
-      ],
+      ),
     );
   }
 
@@ -284,7 +305,7 @@ class _ExpenseListScreenState extends State<ExpenseListScreen> {
             ),
           );
         },
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(10),
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Column(
@@ -294,9 +315,14 @@ class _ExpenseListScreenState extends State<ExpenseListScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   StatusBadge(status: item.status),
-                  Text(
-                    DateFormatter.formatDate(item.createdAt),
-                    style: const TextStyle(fontSize: 12, color: AppColors.textMuted),
+                  const SizedBox(width: 8),
+                  Flexible(
+                    child: Text(
+                      DateFormatter.formatDate(item.createdAt),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontSize: 12, color: AppColors.textMuted),
+                    ),
                   ),
                 ],
               ),
@@ -306,7 +332,7 @@ class _ExpenseListScreenState extends State<ExpenseListScreen> {
                 style: const TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w600,
-                  color: AppColors.textPrimary,
+                  color: AppColors.forest,
                 ),
               ),
               if (item.description != null && item.description!.isNotEmpty) ...[
@@ -331,7 +357,7 @@ class _ExpenseListScreenState extends State<ExpenseListScreen> {
                   const SizedBox(width: 8),
                   Text(
                     CurrencyFormatter.format(item.requestedAmount),
-                    style: AppTheme.moneyStyle,
+                    style: AppTheme.moneyStyle.copyWith(color: AppColors.forest),
                   ),
                 ],
               ),
