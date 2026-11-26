@@ -6,6 +6,7 @@ import '../../core/utils/currency_formatter.dart';
 import '../../core/utils/date_formatter.dart';
 import '../../core/widgets/app_button.dart';
 import '../../core/widgets/confirmation_dialog.dart';
+import '../../core/widgets/rejection_reason_dialog.dart';
 import '../../core/widgets/state_views.dart';
 import '../../core/widgets/status_badge.dart';
 import '../expenses/expense_service.dart';
@@ -158,13 +159,13 @@ class _BendaharaReviewScreenState extends State<BendaharaReviewScreen> {
     return DefaultTabController(
       length: 2,
       child: Scaffold(
-        backgroundColor: AppColors.surfaceMuted,
+        backgroundColor: AppColors.cloud,
         appBar: AppBar(
           title: const Text('Review Pengeluaran Bendahara'),
           bottom: const TabBar(
-            labelColor: AppColors.primary700,
+            labelColor: AppColors.forest,
             unselectedLabelColor: AppColors.textSecondary,
-            indicatorColor: AppColors.primary700,
+            indicatorColor: AppColors.growth,
             tabs: [
               Tab(text: 'Menunggu Review'),
               Tab(text: 'Semua Riwayat'),
@@ -174,7 +175,7 @@ class _BendaharaReviewScreenState extends State<BendaharaReviewScreen> {
         body: SafeArea(
           child: RefreshIndicator(
             onRefresh: _fetchRequests,
-            color: AppColors.primary700,
+            color: AppColors.forest,
             child: _buildBody(),
           ),
         ),
@@ -256,9 +257,14 @@ class _BendaharaReviewScreenState extends State<BendaharaReviewScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 const StatusBadge(status: 'submitted'),
-                Text(
-                  DateFormatter.formatDateTime(request.createdAt),
-                  style: const TextStyle(fontSize: 12, color: AppColors.textMuted),
+                const SizedBox(width: 8),
+                Flexible(
+                  child: Text(
+                    DateFormatter.formatDateTime(request.createdAt),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontSize: 12, color: AppColors.textMuted),
+                  ),
                 ),
               ],
             ),
@@ -269,7 +275,7 @@ class _BendaharaReviewScreenState extends State<BendaharaReviewScreen> {
               style: const TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
-                color: AppColors.textPrimary,
+                color: AppColors.forest,
               ),
             ),
             if (request.description != null && request.description!.isNotEmpty) ...[
@@ -285,8 +291,8 @@ class _BendaharaReviewScreenState extends State<BendaharaReviewScreen> {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: AppColors.surfaceRaised,
-                borderRadius: BorderRadius.circular(8),
+                color: AppColors.mint,
+                borderRadius: BorderRadius.circular(10),
                 border: Border.all(color: AppColors.border, width: 1),
               ),
               child: Row(
@@ -301,7 +307,7 @@ class _BendaharaReviewScreenState extends State<BendaharaReviewScreen> {
                   const SizedBox(width: 8),
                   Text(
                     CurrencyFormatter.format(request.requestedAmount),
-                    style: AppTheme.moneyLargeStyle.copyWith(color: AppColors.primary700),
+                    style: AppTheme.moneyLargeStyle.copyWith(color: AppColors.forest),
                   ),
                 ],
               ),
@@ -310,15 +316,16 @@ class _BendaharaReviewScreenState extends State<BendaharaReviewScreen> {
             if (isSelfSubmission) ...[
               const SizedBox(height: 10),
               Container(
-                padding: const EdgeInsets.all(8),
+                padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
                   color: AppColors.statusRejectedBg,
                   borderRadius: BorderRadius.circular(6),
+                  border: Border.all(color: AppColors.statusRejectedBorder, width: 1),
                 ),
                 child: const Row(
                   children: [
-                    Icon(Icons.info_outline, size: 16, color: AppColors.statusRejectedText),
-                    SizedBox(width: 6),
+                    Icon(Icons.lock_outlined, size: 16, color: AppColors.statusRejectedText),
+                    SizedBox(width: 8),
                     Expanded(
                       child: Text(
                         'Anda adalah pemohon pengeluaran ini. Self-approval tidak diizinkan.',
@@ -331,14 +338,14 @@ class _BendaharaReviewScreenState extends State<BendaharaReviewScreen> {
             ],
 
             const SizedBox(height: 16),
-            // Dua tombol aksi cepat: Tolak dan Setujui
+            // Dua tombol aksi cepat: Tolak (outline merah) dan Setujui (hijau approved)
             Row(
               children: [
                 Expanded(
-                  child: AppButton(
+                  child: AppButton.ghost(
                     label: 'Tolak',
-                    isOutlined: true,
                     foregroundColor: AppColors.statusRejectedText,
+                    borderColor: AppColors.statusRejectedText,
                     onPressed: () => _handleReject(request),
                   ),
                 ),
@@ -347,6 +354,7 @@ class _BendaharaReviewScreenState extends State<BendaharaReviewScreen> {
                   child: AppButton(
                     label: 'Setujui',
                     backgroundColor: AppColors.statusApprovedText,
+                    foregroundColor: AppColors.onPrimary,
                     onPressed: isSelfSubmission ? null : () => _handleApprove(request),
                   ),
                 ),
@@ -370,9 +378,14 @@ class _BendaharaReviewScreenState extends State<BendaharaReviewScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 StatusBadge(status: request.status),
-                Text(
-                  DateFormatter.formatDateTime(request.createdAt),
-                  style: const TextStyle(fontSize: 12, color: AppColors.textMuted),
+                const SizedBox(width: 8),
+                Flexible(
+                  child: Text(
+                    DateFormatter.formatDateTime(request.createdAt),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontSize: 12, color: AppColors.textMuted),
+                  ),
                 ),
               ],
             ),
@@ -382,7 +395,7 @@ class _BendaharaReviewScreenState extends State<BendaharaReviewScreen> {
               style: const TextStyle(
                 fontSize: 15,
                 fontWeight: FontWeight.w600,
-                color: AppColors.textPrimary,
+                color: AppColors.forest,
               ),
             ),
             const SizedBox(height: 6),
@@ -398,17 +411,19 @@ class _BendaharaReviewScreenState extends State<BendaharaReviewScreen> {
                 const SizedBox(width: 8),
                 Text(
                   CurrencyFormatter.format(request.requestedAmount),
-                  style: AppTheme.moneyStyle,
+                  style: AppTheme.moneyStyle.copyWith(color: AppColors.forest),
                 ),
               ],
             ),
             if (request.rejectionReason != null) ...[
               const SizedBox(height: 8),
               Container(
+                width: double.infinity,
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
                   color: AppColors.statusRejectedBg,
                   borderRadius: BorderRadius.circular(6),
+                  border: Border.all(color: AppColors.statusRejectedBorder),
                 ),
                 child: Text(
                   'Alasan penolakan: ${request.rejectionReason}',
