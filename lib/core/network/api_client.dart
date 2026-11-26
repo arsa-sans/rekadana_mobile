@@ -78,7 +78,7 @@ class ApiClient {
         e.type == DioExceptionType.sendTimeout ||
         e.type == DioExceptionType.receiveTimeout) {
       return ApiException(
-        message: 'Koneksi ke server terputus karena batas waktu habis. Silakan coba lagi.',
+        message: 'Koneksi ke server terputus karena batas waktu habis (timeout). Server mungkin sedang tidak aktif atau dalam pemulihan cold start. Silakan coba beberapa saat lagi.',
         code: 'TIMEOUT',
       );
     }
@@ -129,7 +129,19 @@ class ApiClient {
           statusCode: 403,
         );
       case 404:
-        return ApiException(message: 'Data yang dicari tidak ditemukan.', statusCode: 404);
+        return ApiException(message: 'Data atau endpoint yang dicari tidak ditemukan.', statusCode: 404);
+      case 413:
+        return ApiException(
+          message: 'Ukuran file melebihi batas maksimal 5 MiB.',
+          code: 'FILE_TOO_LARGE',
+          statusCode: 413,
+        );
+      case 415:
+        return ApiException(
+          message: 'Format file tidak didukung. Gunakan file PDF, JPEG, atau PNG.',
+          code: 'UNSUPPORTED_FILE_TYPE',
+          statusCode: 415,
+        );
       case 422:
         return ApiException(
           message: 'Data yang dimasukkan tidak lolos validasi server.',
@@ -141,6 +153,14 @@ class ApiClient {
           message: 'Terjadi gangguan internal pada server. Silakan hubungi administrator.',
           code: 'SERVER_ERROR',
           statusCode: 500,
+        );
+      case 502:
+      case 503:
+      case 504:
+        return ApiException(
+          message: 'Server sedang tidak aktif atau database Neon dalam mode suspend. Silakan coba beberapa saat lagi.',
+          code: 'SERVICE_UNAVAILABLE',
+          statusCode: response?.statusCode,
         );
       default:
         return ApiException(
@@ -180,7 +200,9 @@ class ApiClient {
         data: formData,
         onSendProgress: onSendProgress,
         options: Options(
-          headers: {'Content-Type': 'multipart/form-data'},
+          contentType: Headers.multipartFormDataContentType,
+          sendTimeout: const Duration(seconds: 60),
+          receiveTimeout: const Duration(seconds: 60),
         ),
       );
       return response.data;
