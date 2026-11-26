@@ -41,6 +41,7 @@ class _ExpenseCreateScreenState extends State<ExpenseCreateScreen> {
   bool _isLoadingItems = true;
 
   XFile? _selectedImage;
+  String? _createdExpenseId;
   bool _isSubmitting = false;
   double _uploadProgress = 0.0;
   String? _errorMessage;
@@ -143,7 +144,7 @@ class _ExpenseCreateScreenState extends State<ExpenseCreateScreen> {
                 ),
               ),
               ListTile(
-                leading: const Icon(Icons.camera_alt_outlined, color: AppColors.primary700),
+                leading: const Icon(Icons.camera_alt_outlined, color: AppColors.forest),
                 title: const Text('Ambil Foto Kamera'),
                 onTap: () {
                   Navigator.of(ctx).pop();
@@ -151,7 +152,7 @@ class _ExpenseCreateScreenState extends State<ExpenseCreateScreen> {
                 },
               ),
               ListTile(
-                leading: const Icon(Icons.photo_library_outlined, color: AppColors.primary700),
+                leading: const Icon(Icons.photo_library_outlined, color: AppColors.forest),
                 title: const Text('Pilih dari Galeri'),
                 onTap: () {
                   Navigator.of(ctx).pop();
@@ -183,29 +184,43 @@ class _ExpenseCreateScreenState extends State<ExpenseCreateScreen> {
     });
 
     try {
-      // 1. Buat permohonan pengeluaran ke server
-      final createdRequest = await _expenseService.createExpenseRequest(
-        widget.event.id,
-        title: _titleController.text.trim(),
-        requestedAmount: _requestedAmountNumeric,
-        budgetItemId: _selectedBudgetItemId,
-        description: _descController.text.trim().isEmpty ? null : _descController.text.trim(),
-      );
+      // 1. Buat permohonan pengeluaran ke server (hindari duplikasi jika hanya upload bukti yang gagal)
+      if (_createdExpenseId == null) {
+        final createdRequest = await _expenseService.createExpenseRequest(
+          widget.event.id,
+          title: _titleController.text.trim(),
+          requestedAmount: _requestedAmountNumeric,
+          budgetItemId: _selectedBudgetItemId,
+          description: _descController.text.trim().isEmpty ? null : _descController.text.trim(),
+        );
+        _createdExpenseId = createdRequest.id;
+      }
 
       // 2. Unggah file bukti jika dipilih
       if (_selectedImage != null) {
-        await _expenseService.uploadEvidence(
-          organizationId: widget.organization.id,
-          expenseRequestId: createdRequest.id,
-          filePath: _selectedImage!.path,
-          onProgress: (sent, total) {
-            if (total > 0 && mounted) {
-              setState(() {
-                _uploadProgress = sent / total;
-              });
-            }
-          },
-        );
+        try {
+          await _expenseService.uploadEvidence(
+            organizationId: widget.organization.id,
+            expenseRequestId: _createdExpenseId!,
+            filePath: _selectedImage!.path,
+            onProgress: (sent, total) {
+              if (total > 0 && mounted) {
+                setState(() {
+                  _uploadProgress = sent / total;
+                });
+              }
+            },
+          );
+        } catch (uploadError) {
+          if (!mounted) return;
+          setState(() {
+            _errorMessage =
+                'Pengajuan pengeluaran sudah tersimpan, tetapi unggah bukti gagal: $uploadError. '
+                'Anda dapat mencoba unggah ulang bukti di bawah tanpa membuat pengajuan ganda.';
+            _isSubmitting = false;
+          });
+          return;
+        }
       }
 
       if (!mounted) return;
@@ -225,13 +240,59 @@ class _ExpenseCreateScreenState extends State<ExpenseCreateScreen> {
     }
   }
 
+  bool get _isFormDirty =>
+      _titleController.text.isNotEmpty ||
+      _descController.text.isNotEmpty ||
+      _requestedAmountNumeric.isNotEmpty ||
+      _selectedImage != null;
+
+  Future<bool> _confirmDiscard() async {
+    if (!_isFormDirty) return true;
+    final shouldLeave = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        backgroundColor: AppColors.surface,
+        title: const Text(
+          'Batalkan pengisian?',
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.forest),
+        ),
+        content: const Text(
+          'Data yang sudah diisi belum disimpan dan akan hilang jika keluar.',
+          style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Lanjutkan Isi', style: TextStyle(color: AppColors.forest)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            style: TextButton.styleFrom(foregroundColor: AppColors.statusRejectedText),
+            child: const Text('Keluar'),
+          ),
+        ],
+      ),
+    );
+    return shouldLeave ?? false;
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.surfaceMuted,
-      appBar: AppBar(
-        title: const Text('Pengajuan Kebutuhan Lapangan'),
-      ),
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) async {
+        if (didPop) return;
+        final shouldLeave = await _confirmDiscard();
+        if (shouldLeave && context.mounted) {
+          Navigator.of(context).pop();
+        }
+      },
+      child: Scaffold(
+        backgroundColor: AppColors.cloud,
+        appBar: AppBar(
+          title: const Text('Pengajuan Kebutuhan Lapangan'),
+        ),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 16.0),
@@ -252,7 +313,7 @@ class _ExpenseCreateScreenState extends State<ExpenseCreateScreen> {
                     ),
                     child: Row(
                       children: [
-                        const Icon(Icons.event_note, color: AppColors.primary700, size: 20),
+                        const Icon(Icons.event_note, color: AppColors.forest, size: 20),
                         const SizedBox(width: 10),
                         Expanded(
                           child: Text(
@@ -260,7 +321,7 @@ class _ExpenseCreateScreenState extends State<ExpenseCreateScreen> {
                             style: const TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w600,
-                              color: AppColors.textPrimary,
+                              color: AppColors.forest,
                             ),
                           ),
                         ),
@@ -274,7 +335,7 @@ class _ExpenseCreateScreenState extends State<ExpenseCreateScreen> {
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
                         color: AppColors.statusRejectedBg,
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: BorderRadius.circular(6),
                         border: Border.all(color: AppColors.statusRejectedBorder, width: 1),
                       ),
                       child: Text(
@@ -294,7 +355,7 @@ class _ExpenseCreateScreenState extends State<ExpenseCreateScreen> {
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
                       color: AppColors.surface,
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(10),
                       border: Border.all(color: AppColors.border, width: 1),
                     ),
                     child: Column(
@@ -391,7 +452,7 @@ class _ExpenseCreateScreenState extends State<ExpenseCreateScreen> {
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
                       color: AppColors.surface,
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(10),
                       border: Border.all(color: AppColors.border, width: 1),
                     ),
                     child: Column(
@@ -402,7 +463,7 @@ class _ExpenseCreateScreenState extends State<ExpenseCreateScreen> {
                           style: TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.w600,
-                            color: AppColors.textPrimary,
+                            color: AppColors.forest,
                           ),
                         ),
                         const SizedBox(height: 4),
@@ -416,21 +477,16 @@ class _ExpenseCreateScreenState extends State<ExpenseCreateScreen> {
                         const SizedBox(height: 14),
 
                         if (_selectedImage == null)
-                          OutlinedButton.icon(
+                          AppButton.ghost(
+                            label: 'Ambil atau Pilih Foto Bukti',
+                            icon: Icons.add_a_photo_outlined,
                             onPressed: _showImagePickerOptions,
-                            icon: const Icon(Icons.add_a_photo_outlined, size: 20),
-                            label: const Text('Ambil atau Pilih Foto Bukti'),
-                            style: OutlinedButton.styleFrom(
-                              minimumSize: const Size(double.infinity, 48),
-                              side: const BorderSide(color: AppColors.primary500, width: 1),
-                              foregroundColor: AppColors.primary700,
-                            ),
                           )
                         else ...[
                           Stack(
                             children: [
                               ClipRRect(
-                                borderRadius: BorderRadius.circular(8),
+                                borderRadius: BorderRadius.circular(6),
                                 child: Image.file(
                                   File(_selectedImage!.path),
                                   height: 180,
@@ -441,20 +497,19 @@ class _ExpenseCreateScreenState extends State<ExpenseCreateScreen> {
                               Positioned(
                                 top: 8,
                                 right: 8,
-                                child: InkWell(
-                                  onTap: () {
+                                child: IconButton(
+                                  onPressed: () {
                                     setState(() {
                                       _selectedImage = null;
                                     });
                                   },
-                                  child: Container(
-                                    padding: const EdgeInsets.all(6),
-                                    decoration: const BoxDecoration(
-                                      color: Colors.black54,
-                                      shape: BoxShape.circle,
-                                    ),
-                                    child: const Icon(Icons.close, color: Colors.white, size: 18),
+                                  tooltip: 'Hapus foto',
+                                  style: IconButton.styleFrom(
+                                    backgroundColor: AppColors.forest,
+                                    foregroundColor: AppColors.onPrimary,
+                                    minimumSize: const Size(44, 44),
                                   ),
+                                  icon: const Icon(Icons.close, size: 18),
                                 ),
                               ),
                             ],
@@ -462,7 +517,7 @@ class _ExpenseCreateScreenState extends State<ExpenseCreateScreen> {
                           const SizedBox(height: 8),
                           TextButton.icon(
                             onPressed: _showImagePickerOptions,
-                            icon: const Icon(Icons.refresh, size: 16),
+                            icon: const Icon(Icons.refresh, size: 18),
                             label: const Text('Ganti Foto'),
                           ),
                         ],
@@ -472,10 +527,14 @@ class _ExpenseCreateScreenState extends State<ExpenseCreateScreen> {
                   const SizedBox(height: 24),
 
                   if (_isSubmitting && _selectedImage != null && _uploadProgress > 0) ...[
-                    LinearProgressIndicator(
-                      value: _uploadProgress,
-                      backgroundColor: AppColors.primary50,
-                      valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primary700),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(2),
+                      child: LinearProgressIndicator(
+                        value: _uploadProgress,
+                        minHeight: 3,
+                        backgroundColor: AppColors.mint,
+                        valueColor: const AlwaysStoppedAnimation<Color>(AppColors.growth),
+                      ),
                     ),
                     const SizedBox(height: 8),
                     Text(
@@ -495,6 +554,7 @@ class _ExpenseCreateScreenState extends State<ExpenseCreateScreen> {
                 ],
               ),
             ),
+          ),
           ),
         ),
       ),
